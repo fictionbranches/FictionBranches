@@ -1,0 +1,52 @@
+using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using System.Reflection;
+
+namespace FictionBranches.Web.Extensions;
+
+public static class EnumExtensions
+{
+    public static string GetDisplayName(this Enum enumValue)
+    {
+        var member = enumValue.GetType()
+            .GetMember(enumValue.ToString())
+            .FirstOrDefault();
+        return member?.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? "";
+    }
+    public static string GetDisplayShortName(this Enum enumValue)
+    {
+        var member = enumValue.GetType()
+            .GetMember(enumValue.ToString())
+            .FirstOrDefault();
+        return member?.GetCustomAttribute<DisplayAttribute>()?.GetShortName() ?? "";
+    }
+
+    public static T[] GetAllValues<T>() where T : Enum
+    {
+        return Enum.GetValues(typeof(T)).Cast<T>().ToArray();
+    }
+}
+
+public static class LinqExtensions
+{
+    public static IOrderedQueryable<TSource> OrderByDirection<TSource, TKey>(this IQueryable<TSource> source,
+        SortDirection sortDirection,
+        Expression<Func<TSource, TKey>> keySelector) => sortDirection switch
+    {
+        SortDirection.Descending => source.OrderByDescending(keySelector),
+        _ => source.OrderBy(keySelector)
+    };
+}
+
+public enum SortDirection
+{
+    Ascending, Descending, None
+}
+
+public static class StringExtensions
+{
+    public static bool EqualsIgnoreCase(this string? a, string? b)
+    {
+        return a is null ? b is null : string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+    }
+}

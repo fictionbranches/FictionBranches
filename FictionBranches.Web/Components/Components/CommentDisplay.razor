@@ -1,0 +1,12 @@
+<div class="alert alert-primary">
+    <p class="">@Comment.Text</p>
+    <hr/>
+    <p><a href="@($"/fb/user/{Comment.User!.Id}")">@Comment.User.Author</a></p>
+    @* <p><a href="@($"/fb/comment/{Comment.Id}")">@Comment.Date</a></p> *@
+    <p>@Comment.Date</p>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required Fbcomment Comment { get; init; }
+}

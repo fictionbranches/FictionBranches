@@ -1,0 +1,8 @@
+@foreach (var tag in Tags)
+{
+    <TagDisplay Tag="tag" />
+}
+@code {
+    [Parameter, EditorRequired]
+    public required IEnumerable<Fbtag> Tags { get; init; }
+}

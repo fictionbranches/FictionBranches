@@ -1,0 +1,54 @@
+﻿@page "/fb"
+@using FictionBranches.Web.Data
+@using FictionBranches.Web.Data.Models
+@using Microsoft.EntityFrameworkCore
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject ApplicationDbContext Db
+
+<PageTitle>Welcome to Fiction Branches</PageTitle>
+
+<h1>Choose Your Own Story</h1>
+
+<hr/>
+
+<h3>Guidelines</h3>
+<p>Fiction Branches is an online software engine that allows the production of multi-plotted stories. Each story is divided into episodes. Each episode has a title, a link back to the parent episode, and the story text for that episode. At the end of each episode, there may be one or more links to subsequent episodes, plus the option to add another branch to the story at that point.</p>
+<p>New episodes can be added to the story using the 'add new episode' link at the bottom of each episode. After doing this a form will be displayed enabling the user to add text for the new episode. When this has been done the parent episode will display a link to the new episode with the link text entered in the add new episode form.</p>
+<p>You must be a registered user and be logged in in order to add new episodes to the story. You may adjust user preferences by clicking your name in the top right corner of the page once you have logged in.</p>
+<p>Episodes may be edited by the moderators to remove any inappropriate content, correct errors, or correct parts of the story which are non-canon. Writers should try to write new episodes that maintain continuity with the story to that point. There is no need to make new episodes consistent with other story branches parallel to the one you're adding.</p>
+
+<hr />
+
+<h2>Choose a story</h2>
+
+<hr/>
+
+@foreach (var root in roots)
+{
+    <h3>
+        <a href="/fb/story/@root.Generatedid">@root.Link</a> (@root.Childcount)
+    </h3>
+}
+
+@code {
+
+    private List<Fbepisode>? roots;
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        roots = Db.Fbepisodes
+            .Where(e => e.ParentGeneratedid == null)
+            .OrderBy(e => e.Date)
+            .ToList();
+
+        if (roots is null)
+        {
+            HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
+        }
+    }
+
+
+}

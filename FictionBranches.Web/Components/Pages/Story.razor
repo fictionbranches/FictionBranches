@@ -1,0 +1,150 @@
+@page "/fb/story/{GeneratedId:long}"
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavMan
+@inject ApplicationDbContext Db
+
+@if (episode is null)
+{
+    <PageTitle>404 Not Found: @GeneratedId</PageTitle>
+    <p>404 Not Found: @GeneratedId</p>
+}
+else
+{
+    <PageTitle>PageTitle: @episode.Title</PageTitle>
+    <h1>@episode.Title</h1>
+    
+    <p>
+        <a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a> on @episode.Date
+        @if (episode.Editor is not null)
+        {
+            <text>Episode last modified by <a href="/fb/user/@episode.Editor.Id">@episode.Editor.Author</a> on @episode.Editdate</text>
+        }
+    </p>
+    
+    <p>
+        @episode.Viewcount hits, 
+        @episode.Fbepisodeviews.Count() views,
+        @episode.Fbupvotes.Count() upvotes.
+    </p>
+    
+    <p>
+        <TagListDisplay Tags="episode.Fbepisodetags.Select(e => e.Tag)" />
+    </p>
+    
+    <p>
+        <a href="@(episode.ParentGeneratedid != null ? $"/fb/story/{episode.ParentGeneratedid}" : "/fb")">Return to Parent Episode</a><br/>
+        <a href="/fb/story/@GeneratedId#children">Jump to child episodes</a><br/>
+        <a href="/fb/story/@GeneratedId#comments">Jump to comments</a><br/>
+    </p>
+    
+    <hr/>
+    
+    <div class="entry-content fbepisodebody fbrawmarkdown">@episode.Body</div>
+    
+    <hr/>
+    
+    <a name="children" />
+    <form method="GET">
+        <select name="sort" id="sort" class="form-select my-3" style="width:auto;" value="@($"/fb/story/{GeneratedId}?sort={sortModel.ChildSort.GetDisplayShortName()}")" onchange="window.location = this.value">
+            @foreach (var childSort in EnumExtensions.GetAllValues<ChildSort>())
+            {
+                <option value="@($"/fb/story/{GeneratedId}?sort={childSort.GetDisplayShortName()}")">@childSort.GetDisplayName()</option>
+            }
+        </select>
+    </form>
+    @foreach (var child in episode.InverseParentGenerated)
+    {
+        <p>
+            <a href="/fb/story/@child.Generatedid">@child.Link</a> 
+            (@child.Childcount) 
+            <TagListDisplay Tags="child.Fbepisodetags.Select(e => e.Tag)" />
+        </p>
+    }
+    
+    <hr/>
+    
+    <a name="comments" />
+    @foreach (var comment in episode.Fbcomments)
+    {
+        <CommentDisplay Comment="comment" />
+    }
+}
+@code {
+    [Parameter]
+    public long GeneratedId { get; init; }
+
+    [SupplyParameterFromQuery]
+    public string? Sort { get; init; }
+    
+    private class ChildSortModel
+    {
+        [Required] public ChildSort ChildSort { get; set; } = ChildSort.OldestFirst;
+    }
+
+    [SupplyParameterFromForm] private ChildSortModel sortModel { get; set; } = new();
+    
+    private Fbepisode? episode;
+
+    private const string SortCookieName = "fbchildsort";
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized(); 
+
+        // if Sort query-param is set, set cookie and redirect
+        if (!string.IsNullOrWhiteSpace(Sort))
+        {
+            var childSort = ChildSortHelper.GetFromShortName(Sort);
+            System.Diagnostics.Debug.WriteLine("******* Setting childSort to " + childSort.GetDisplayShortName());
+            HttpContextAccessor.HttpContext!.Response.Cookies.Append(SortCookieName, childSort.GetDisplayShortName());
+            NavMan.NavigateTo($"/fb/story/{GeneratedId}#children");
+            return;
+        }
+        
+        var cookie = HttpContextAccessor.HttpContext!.Request.Cookies[SortCookieName];
+        if (!string.IsNullOrWhiteSpace(cookie))
+            sortModel.ChildSort = ChildSortHelper.GetFromShortName(cookie);
+
+        Func<IQueryable<Fbepisode>, IOrderedQueryable<Fbepisode>> orderBy = sortModel.ChildSort switch
+        {
+            ChildSort.ChildrenAscending =>  query => query.OrderBy(e => e.Childcount),
+            ChildSort.ChildrenDescending =>  query => query.OrderByDescending(e => e.Childcount),
+            ChildSort.Random => query => query.OrderBy(e => Guid.NewGuid().ToString()),
+            ChildSort.NewestFirst => query => query.OrderByDescending(e => e.Date),
+            _ => query => query.OrderBy(e => e.Date),
+        }; 
+        
+        episode = Db.Fbepisodes
+            .Include(e => e.Author)
+            .Include(e => e.Editor)
+            .Include(e => e.Fbcomments)
+                .ThenInclude(e => e.User)
+            .Include(e => e.Fbepisodetags)
+                .ThenInclude(e => e.Tag)
+            .Include(e => e.Fbepisodeviews)
+            .Include(e => e.Fbupvotes)
+            .AsSplitQuery()
+            .FirstOrDefault(e => e.Generatedid == GeneratedId);
+
+        if (episode is null)
+        {
+            HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
+            return;
+        }
+
+        episode.InverseParentGenerated = orderBy(Db.Fbepisodes
+            .Where(e => e.ParentGeneratedid == GeneratedId))
+            .Include(e => e.Fbepisodetags)
+                .ThenInclude(e => e.Tag)
+            .ToList();
+        
+    }
+
+    // // Redirect to this same page, but with a query param
+    // private void HandleChildSortSubmit()
+    // {
+    //     System.Diagnostics.Debug.WriteLine("******** HandleChildSortSubmit ");
+    //     NavMan.NavigateTo($"/fb/story/{GeneratedId}?sort={sortModel.ChildSort.GetDisplayShortName()}");
+    // }
+}

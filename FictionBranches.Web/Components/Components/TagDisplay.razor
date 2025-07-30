@@ -1,0 +1,8 @@
+<span class="fbtag" title="@($"{Tag.Shortname} - {Tag.Longname}")">
+    <a class="fbtag" href="/fb/recent?tag=@Tag.Shortname">@Tag.Shortname</a>
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public required Fbtag Tag { get; init; }
+}

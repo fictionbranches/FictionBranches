@@ -1,0 +1,151 @@
+@page "/fb/user/{Id}"
+
+@inject IHttpContextAccessor HttpContextAccessor
+
+@inject ApplicationDbContext Db
+@inject IOptionsMonitor<FictionBranchesOptions> FbConfig
+
+@if (user is null)
+{
+    <PageTitle>404 Not Found: @Id</PageTitle>
+    <p>404 Not Found: @Id</p>
+}
+else
+{
+    <PageTitle>@user.Author's profile</PageTitle>
+    <h1>@user.Author's profile</h1>
+    @if (user.Level > 1)
+    {
+        <p>Fiction Branches @(user.Level > 10 ? "admin" : "moderator")</p>
+    }
+    <p>Member since @user.Date</p>
+
+    <hr/>
+    <div class="fbrawmarkdown">@user.Bio</div>
+    <hr/>
+
+    <p>
+        @if (Comments is null)
+        {
+            <a href="/fb/user/@user.Id?comments">Recent Comments</a>
+        }
+        else
+        {
+            <a href="/fb/user/@user.Id">Recent Episodes</a>
+        }
+        <br/>
+        @if (!isFirstPage)
+        {
+            <a href="@($"/fb/user/{user.Id}?page={page - 1}{(Comments is not null ? "&comments" : "")}")">Previous</a>
+        }
+        @if (!isFirstPage && !isLastPage)
+        {
+            <text>&nbsp;</text>
+        }
+        @if (!isLastPage)
+        {
+            <a href="@($"/fb/user/{user.Id}?page={page + 1}{(Comments is not null ? "&comments" : "")}")">Next</a>
+        }
+    </p>
+    
+    
+    @if (Comments is null)
+    {
+        // show recent episodes
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">Episode</th>
+                <th scope="col">Date</th>
+                <th scope="col">Story</th>
+                <th scope="col">Depth</th>
+            </tr>
+            </thead>
+            <tbody>
+                @foreach (var episode in user.FbepisodeAuthors.Take(pageSize))
+                {
+                    <tr>
+                        <td>
+                            @if (!episode.Title.EqualsIgnoreCase(episode.Link))
+                            {
+                                @episode.Title<br/>
+                            }
+                            <a href="/fb/story/@episode.Generatedid">@episode.Link</a>
+                        </td>
+                        <td>@episode.Date</td>
+                        <td>&lt;&lt;story&gt;&gt;</td>
+                        <td>@episode.Newmap?.Split('B')?.Length</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        // show recent comments
+         @foreach (var comment in user.FbcommentUsers)
+         {
+             <CommentDisplay Comment="comment" />
+         }
+    }
+}
+
+
+@code {
+    [Parameter] public required string Id { get; init; }
+
+    [SupplyParameterFromQuery] public string? Comments { get; init; }
+
+    [SupplyParameterFromQuery] public int? Page { get; init; }
+
+    private Fbuser? user;
+    private int page;
+    private int pageSize;
+    private bool isFirstPage;
+    private bool isLastPage;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        page = int.Max(Page ?? -1, 1);
+        pageSize = FbConfig.CurrentValue.PageSize;
+
+        isFirstPage = page == 1;
+
+        user = Db.Fbusers
+            .FirstOrDefault(e => e.Id == Id.ToLower());
+
+        if (user is null)
+        {
+            HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
+            return;
+        }
+
+        if (Comments is null)
+        {
+            // show recent episodes
+            user.FbepisodeAuthors = Db.Fbepisodes
+                .Where(e => e.AuthorId == user.Id)
+                .OrderByDescending(e => e.Date)
+                .Skip(pageSize * (page-1))
+                .Take(pageSize+1)
+                .ToList();
+
+            isLastPage = user.FbepisodeAuthors.Count <= pageSize;
+        }
+        else
+        {
+            // show recent comments
+            user.FbcommentUsers = Db.Fbcomments
+                .Where(e => e.UserId == user.Id)
+                .OrderByDescending(e => e.Date)
+                .Skip(pageSize * (page-1))
+                .Take(pageSize+1)
+                .ToList();
+            isLastPage = user.FbcommentUsers.Count <= pageSize;
+
+        }
+    }
+
+}
