@@ -45,25 +45,28 @@ else
     <hr/>
     
     <a name="children" />
-    <form method="GET">
-        <select name="sort" id="sort" class="form-select my-3" style="width:auto;" value="@($"/fb/story/{GeneratedId}?sort={sortModel.ChildSort.GetDisplayShortName()}")" onchange="window.location = this.value">
-            @foreach (var childSort in EnumExtensions.GetAllValues<ChildSort>())
-            {
-                <option value="@($"/fb/story/{GeneratedId}?sort={childSort.GetDisplayShortName()}")">@childSort.GetDisplayName()</option>
-            }
-        </select>
-    </form>
-    @foreach (var child in episode.InverseParentGenerated)
+    @if (episode.InverseParentGenerated.Count > 0)
     {
-        <p>
-            <a href="/fb/story/@child.Generatedid">@child.Link</a> 
-            (@child.Childcount) 
-            <TagListDisplay Tags="child.Fbepisodetags.Select(e => e.Tag)" />
-        </p>
+        <form method="GET">
+            <select name="sort" id="sort" class="form-select my-3" style="width:auto;" value="@($"/fb/story/{GeneratedId}?sort={sortModel.ChildSort.GetDisplayShortName()}")" onchange="window.location = this.value">
+                @foreach (var childSort in EnumExtensions.GetAllValues<ChildSort>())
+                {
+                    <option value="@($"/fb/story/{GeneratedId}?sort={childSort.GetDisplayShortName()}")">@childSort.GetDisplayName()</option>
+                }
+            </select>
+        </form>
+        @foreach (var child in episode.InverseParentGenerated)
+        {
+            <p>
+                <a href="/fb/story/@child.Generatedid">@child.Link</a>
+                (@child.Childcount)
+                <TagListDisplay Tags="child.Fbepisodetags.Select(e => e.Tag)"/>
+            </p>
+        }
+
+        <hr/>
     }
-    
-    <hr/>
-    
+
     <a name="comments" />
     @foreach (var comment in episode.Fbcomments)
     {
