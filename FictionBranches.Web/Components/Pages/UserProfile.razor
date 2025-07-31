@@ -85,7 +85,7 @@ else
         // show recent comments
          @foreach (var comment in user.FbcommentUsers)
          {
-             <CommentDisplay Comment="comment" />
+             <CommentDisplay Comment="comment" PagePath="@($"/fb/user/{user.Id}?comments")" ShowEpisode="true" />
          }
     }
 }
@@ -138,6 +138,7 @@ else
         {
             // show recent comments
             user.FbcommentUsers = Db.Fbcomments
+                .Include(e => e.EpisodeGenerated)
                 .Where(e => e.UserId == user.Id)
                 .OrderByDescending(e => e.Date)
                 .Skip(pageSize * (page-1))

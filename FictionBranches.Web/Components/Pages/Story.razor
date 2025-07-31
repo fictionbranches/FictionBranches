@@ -11,14 +11,14 @@
 }
 else
 {
-    <PageTitle>PageTitle: @episode.Title</PageTitle>
+    <PageTitle>@episode.Title</PageTitle>
     <h1>@episode.Title</h1>
     
     <p>
         <a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a> on @episode.Date
         @if (episode.Editor is not null)
         {
-            <text>Episode last modified by <a href="/fb/user/@episode.Editor.Id">@episode.Editor.Author</a> on @episode.Editdate</text>
+            <br/><text>Episode last modified by <a href="/fb/user/@episode.Editor.Id">@episode.Editor.Author</a> on @episode.Editdate</text>
         }
     </p>
     
@@ -70,7 +70,7 @@ else
     <a name="comments" />
     @foreach (var comment in episode.Fbcomments)
     {
-        <CommentDisplay Comment="comment" />
+        <CommentDisplay Comment="comment" PagePath="@($"/fb/story/{episode.Generatedid}")" ShowAuthor="true" />
     }
 }
 @code {

@@ -1,12 +1,25 @@
-<div class="alert alert-primary">
+<a name="@($"comment{Comment.Id}")" class="mb-3" />
+<div id="@($"comment{Comment.Id}")" class="alert alert-primary">
     <p class="">@Comment.Text</p>
     <hr/>
-    <p><a href="@($"/fb/user/{Comment.User!.Id}")">@Comment.User.Author</a></p>
-    @* <p><a href="@($"/fb/comment/{Comment.Id}")">@Comment.Date</a></p> *@
-    <p>@Comment.Date</p>
+    @if (ShowAuthor)
+    {
+        <p><a href="@($"/fb/user/{Comment.User!.Id}")">@Comment.User.Author</a></p>
+    }
+    @if (ShowEpisode)
+    {
+        <p><a href="@($"/fb/story/{Comment.EpisodeGenerated!.Generatedid}")">@Comment.EpisodeGenerated.Link</a></p>
+    }
+    <p><a href="@($"{PagePath}#comment{Comment.Id}")">@Comment.Date</a></p>
 </div>
 
 @code {
     [Parameter, EditorRequired]
     public required Fbcomment Comment { get; init; }
+    
+    [Parameter, EditorRequired]
+    public required string PagePath { get; init; }
+
+    [Parameter] public bool ShowAuthor { get; init; } = false;
+    [Parameter] public bool ShowEpisode { get; init; } = false;
 }

@@ -79,3 +79,7 @@ span.fbtag {
 a.fbtag {
     color: inherit !important;
 }
+
+.emphasizedComment {
+    border: 5px solid; 
+}

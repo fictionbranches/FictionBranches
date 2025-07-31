@@ -12,8 +12,6 @@ function parseMarkdownPage() {
 	Array.prototype.forEach.call(elements,parseMarkdownElement);
 }
 
-$(document).ready(event => parseMarkdownPage());
-
 document.addEventListener("DOMContentLoaded", () => {
 	parseMarkdownPage();
 });
