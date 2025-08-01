@@ -1,6 +1,13 @@
 <a name="@($"comment{Comment.Id}")" class="mb-3" />
-<div id="@($"comment{Comment.Id}")" class="alert alert-primary">
-    <p class="">@Comment.Text</p>
+<div id="@($"comment{Comment.Id}")" class="alert alert-dark">
+    @if (Comment.Modvoice)
+    {
+        <div class="alert alert-dark">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            This comment is from a site Moderator
+        </div>
+    }
+    <p>@Comment.Text</p>
     <hr/>
     @if (ShowAuthor)
     {
