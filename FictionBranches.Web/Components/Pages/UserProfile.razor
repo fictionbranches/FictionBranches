@@ -4,6 +4,7 @@
 
 @inject ApplicationDbContext Db
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
+@inject RootEpisodeCache RootEpisodeCache
 
 @if (user is null)
 {
@@ -65,15 +66,9 @@ else
                 @foreach (var episode in user.FbepisodeAuthors.Take(pageSize))
                 {
                     <tr>
-                        <td>
-                            @if (!episode.Title.EqualsIgnoreCase(episode.Link))
-                            {
-                                @episode.Title<br/>
-                            }
-                            <a href="/fb/story/@episode.Generatedid">@episode.Link</a>
-                        </td>
+                        <td><EpisodeLink Episode="episode" ShowTitleIfDifferent="true" /></td>
                         <td>@episode.Date</td>
-                        <td>&lt;&lt;story&gt;&gt;</td>
+                        <td><EpisodeLink Episode="RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)" /></td>
                         <td>@episode.Newmap?.Split('B')?.Length</td>
                     </tr>
                 }

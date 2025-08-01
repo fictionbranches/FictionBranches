@@ -1,6 +1,8 @@
+using Coravel;
 using FictionBranches.Web.Components;
 using FictionBranches.Web.Configuration;
 using FictionBranches.Web.Data;
+using FictionBranches.Web.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString).UseLowerCaseNamingConvention());
 
 builder.Services.Configure<FictionBranchesOptions>(builder.Configuration.GetSection(FictionBranchesOptions.Section));
+
+builder.Services.AddSingleton<RootEpisodeCache>();
+builder.Services.AddScoped<RootEpisodeCacheUpdater>();
+
+builder.Services.AddQueue();
+builder.Services.AddScheduler();
 
 var app = builder.Build();
 
@@ -31,5 +39,15 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>();
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetService<RootEpisodeCacheUpdater>()!.Invoke();
+}
+
+app.Services.UseScheduler(scheduler =>
+{
+    scheduler.Schedule<RootEpisodeCacheUpdater>().EveryFiveMinutes();
+});
 
 app.Run();

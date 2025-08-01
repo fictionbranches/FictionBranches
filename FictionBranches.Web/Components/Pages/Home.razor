@@ -1,10 +1,6 @@
 ﻿@page "/fb"
-@using FictionBranches.Web.Data
-@using FictionBranches.Web.Data.Models
-@using Microsoft.EntityFrameworkCore
 
-@inject IHttpContextAccessor HttpContextAccessor
-@inject ApplicationDbContext Db
+@inject RootEpisodeCache RootEpisodeCache
 
 <PageTitle>Welcome to Fiction Branches</PageTitle>
 
@@ -24,31 +20,9 @@
 
 <hr/>
 
-@foreach (var root in roots)
+@foreach (var root in RootEpisodeCache.Roots)
 {
     <h3>
         <a href="/fb/story/@root.Generatedid">@root.Link</a> (@root.Childcount)
     </h3>
-}
-
-@code {
-
-    private List<Fbepisode>? roots;
-    
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-
-        roots = Db.Fbepisodes
-            .Where(e => e.ParentGeneratedid == null)
-            .OrderBy(e => e.Date)
-            .ToList();
-
-        if (roots is null)
-        {
-            HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
-        }
-    }
-
-
 }

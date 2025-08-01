@@ -3,6 +3,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavMan
 @inject ApplicationDbContext Db
+@inject RootEpisodeCache RootEpisodeCache
 
 @if (episode is null)
 {
@@ -58,7 +59,7 @@ else
         @foreach (var child in episode.InverseParentGenerated)
         {
             <p>
-                <a href="/fb/story/@child.Generatedid">@child.Link</a>
+                <EpisodeLink Episode="child" />
                 (@child.Childcount)
                 <TagListDisplay Tags="child.Fbepisodetags.Select(e => e.Tag)"/>
             </p>

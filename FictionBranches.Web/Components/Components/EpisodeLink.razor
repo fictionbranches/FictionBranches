@@ -1,0 +1,17 @@
+@if (Episode != null)
+{
+    @if (ShowTitleIfDifferent)
+    {
+        @if (!Episode.Title.EqualsIgnoreCase(Episode.Link))
+        {
+            @Episode.Title<br/>
+        }
+    }
+    <a href="@($"/fb/story/{Episode.Generatedid}")">@Episode.Link</a>
+}
+@code {
+    [Parameter, EditorRequired]
+    public Fbepisode? Episode { get; init; }
+
+    [Parameter] public bool ShowTitleIfDifferent { get; init; } = false;
+}
