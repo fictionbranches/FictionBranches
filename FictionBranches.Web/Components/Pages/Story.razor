@@ -70,7 +70,7 @@ else
     <a name="comments" />
     @foreach (var comment in episode.Fbcomments)
     {
-        <CommentDisplay Comment="comment" PagePath="@($"/fb/story/{episode.Generatedid}")" ShowAuthor="true" />
+        <CommentDisplay Comment="comment" ShowAuthor="true" />
     }
 }
 @code {

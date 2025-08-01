@@ -1,3 +1,5 @@
+@inject IHttpContextAccessor HttpContextAccessor
+
 <a name="@($"comment{Comment.Id}")" class="mb-3" />
 <div id="@($"comment{Comment.Id}")" class="alert alert-dark">
     @if (Comment.Modvoice)
@@ -23,9 +25,8 @@
 @code {
     [Parameter, EditorRequired]
     public required Fbcomment Comment { get; init; }
-    
-    [Parameter, EditorRequired]
-    public required string PagePath { get; init; }
+
+    private string PagePath => $"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}";
 
     [Parameter] public bool ShowAuthor { get; init; } = false;
     [Parameter] public bool ShowEpisode { get; init; } = false;

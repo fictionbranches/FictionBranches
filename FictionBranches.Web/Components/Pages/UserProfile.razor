@@ -85,7 +85,7 @@ else
         // show recent comments
          @foreach (var comment in user.FbcommentUsers)
          {
-             <CommentDisplay Comment="comment" PagePath="@($"/fb/user/{user.Id}?comments")" ShowEpisode="true" />
+             <CommentDisplay Comment="comment" ShowEpisode="true" />
          }
     }
 }
