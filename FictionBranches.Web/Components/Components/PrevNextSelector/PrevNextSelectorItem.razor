@@ -1,0 +1,28 @@
+@if (ItemPage == CurrentPage)
+{
+    <button class="btn btn-primary" disabled>@ItemPage</button>
+}
+else
+{
+    <a class="btn btn-outline-primary" href="@GetLinkToPage(ItemPage)">@ItemPage</a>
+}
+
+@code {
+    /// <summary>
+    /// The page this item corresponds to
+    /// </summary>
+    [Parameter, EditorRequired]
+    public required int ItemPage { get; init; }
+    
+    /// <summary>
+    /// The page that the user is currently requesting
+    /// </summary>
+    [CascadingParameter]
+    public required int CurrentPage { get; init; }
+    
+    /// <summary>
+    /// Given a page number, returns a link to that page
+    /// </summary>
+    [CascadingParameter]
+    public required Func<int, string> GetLinkToPage { get; init; }
+}

@@ -3,12 +3,10 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavMan
 @inject ApplicationDbContext Db
-@inject RootEpisodeCache RootEpisodeCache
 
 @if (episode is null)
 {
-    <PageTitle>404 Not Found: @GeneratedId</PageTitle>
-    <p>404 Not Found: @GeneratedId</p>
+    <NotFound Item="@GeneratedId.ToString()" />
 }
 else
 {
@@ -132,10 +130,7 @@ else
             .FirstOrDefault(e => e.Generatedid == GeneratedId);
 
         if (episode is null)
-        {
-            HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
-            return;
-        }
+            return; // 404
 
         episode.InverseParentGenerated = orderBy(Db.Fbepisodes
             .Where(e => e.ParentGeneratedid == GeneratedId))

@@ -1,0 +1,155 @@
+@page "/fb/recent"
+@using System.Text
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavMan
+@inject ApplicationDbContext Db
+@inject RootEpisodeCache RootEpisodeCache
+@inject IOptionsMonitor<FictionBranchesOptions> FbConfig
+
+@if (Story != null && root == null)
+{
+    <NotFound Item="@Story.ToString()" />
+}
+else if (totalPages == 0)
+{
+    <NotFound />
+}
+else if (currentPage > totalPages)
+{
+    <NotFound Item="@currentPage.ToString()" />
+}
+else
+{
+    <PageTitle>@pageTitle</PageTitle>
+    <h1>@pageTitle</h1>
+    <p>
+        Filter by tag: &lt;&lt;TODO: list of tag links&gt;&gt;
+    </p>
+    
+    <p>
+        <PrevNextSelector CurrentPage="currentPage" TotalPages="totalPages" GetLinkToPage="GetLinkToPage" />
+    </p>
+    
+    <p>
+        @if (Reverse == null)
+        {
+            <a href="">Oldest episodes</a>
+        }
+        else
+        {
+            <a href="">Newest episodes</a>
+        }
+    </p>
+    
+    <hr/>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Episode</th>
+                <th scope="col">Author</th>
+                <th scope="col">Date</th>
+                @if (root == null)
+                {
+                    <th scope="col">Story</th>
+                }
+                <th scope="col">Depth</th>
+                <th scope="col">Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var episode in recents)
+            {
+                <tr>
+                    <td><EpisodeLink Episode="episode" ShowTitleIfDifferent="true"></EpisodeLink></td>
+                    <td><a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a></td>
+                    <td>@episode.Date</td>
+                    @if (root == null)
+                    {
+                        <td><a href="@($"/fb/story/{RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)?.Generatedid}")">@RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)?.Link</a></td>
+                    }
+                    <td>@episode.Newmap?.Split('B')?.Length</td>
+                    <td><TagListDisplay Tags="episode.Fbepisodetags!.Select(e => e.Tag)"></TagListDisplay></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    [SupplyParameterFromQuery]
+    public long? Story { get; init; }
+    
+    [SupplyParameterFromQuery]
+    public int? Page { get; set; }
+    
+    [SupplyParameterFromQuery]
+    public string? Reverse { get; init; }
+
+    [SupplyParameterFromQuery]
+    public string? Tag { get; init; }
+    
+    private Fbepisode? root;
+
+    private string pageTitle => root == null ? "Recent episodes" : $"Recent episodes for \"{root.Link}\"";
+
+    private IEnumerable<Fbepisode>? recents;
+
+    private int actualPage = 0;
+    private int currentPage => actualPage + 1;
+    private int totalPages = 0;
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        if (Story != null)
+        {
+            root = RootEpisodeCache.GetEpisode(Story.Value);
+            if (root == null)
+            {
+                // 404
+                return;
+            }
+        }
+
+        if (Page != null)
+            actualPage = Page.Value - 1;
+
+        Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> whereClause = 
+            root == null ? 
+                query => query : 
+                query => query.Where(e => e.Newmap.StartsWith("A" + root.Generatedid + "B"));
+
+        Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> orderByClause =
+            Reverse == null ? 
+                query => query.OrderByDescending(e => e.Date) : 
+                query => query.OrderBy(e => e.Date);
+
+        var totalEpisodes = whereClause(Db.Fbepisodes).Count();
+        (totalPages, var extraPages) = Math.DivRem(totalEpisodes, FbConfig.CurrentValue.PageSize);
+        if (extraPages > 0)
+            ++totalPages;
+        
+        recents = orderByClause(whereClause(Db.Fbepisodes))
+            .Include(e => e.Author)
+            .Include(e => e.Fbepisodetags.OrderBy(tag => tag.Tag.Shortname))
+                .ThenInclude(e => e.Tag)
+            .Skip(FbConfig.CurrentValue.PageSize * actualPage)
+            .Take(FbConfig.CurrentValue.PageSize)
+            .ToList();
+    }
+
+    private string GetLinkToPage(int itemPage)
+    {
+        var link = new StringBuilder();
+        link.Append($"{HttpContextAccessor?.HttpContext?.Request.Path}?page={itemPage}");
+        if (!string.IsNullOrWhiteSpace(Tag))
+            link.Append($"&tag={Tag}");
+        if (Reverse != null)
+            link.Append("&reverse");
+        if ((Story ?? 0) != 0)
+            link.Append($"&story={Story}");
+        return link.ToString();
+    }
+}

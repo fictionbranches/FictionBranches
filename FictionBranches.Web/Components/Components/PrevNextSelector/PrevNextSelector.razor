@@ -1,0 +1,54 @@
+<span class="font-monospace">
+    <CascadingValue Value="CurrentPage">
+        <CascadingValue Value="GetLinkToPage">
+            @if (TotalPages <= 8)
+            {
+                <PrevNextSelectorItemList FirstPage="1" LastPage="TotalPages" />
+            }
+            else
+            {
+                // guaranteed there are at least 9 pages
+                @if (CurrentPage <= 3)
+                {
+                    // 1 2 3 4 ... n
+                    <PrevNextSelectorItemList FirstPage="1" LastPage="4" />
+                    <text> ... </text>
+                    <PrevNextSelectorItem ItemPage="TotalPages" />
+                }
+                else if (CurrentPage > TotalPages - 3)
+                {
+                    // 1 ... n-3 n-2 n-1 n
+                    <PrevNextSelectorItem ItemPage="1" />
+                    <text> ... </text>
+                    <PrevNextSelectorItemList FirstPage="TotalPages-3" LastPage="TotalPages" />
+                }
+                else
+                {
+                    // 1 ... x-2 x-1 x x+1 x+2 ... n
+                    <PrevNextSelectorItem ItemPage="1" />
+                    <text> ... </text>
+                    <PrevNextSelectorItemList FirstPage="CurrentPage-2" LastPage="CurrentPage+2" />
+                    <text> ... </text>
+                    <PrevNextSelectorItem ItemPage="TotalPages" />
+                }
+            }
+        </CascadingValue>
+    </CascadingValue>
+</span>
+
+@code {
+    /// <summary>
+    /// First page is <c>1</c>, last page is equal to <c>TotalPages</c>
+    /// </summary>
+    [Parameter, EditorRequired]
+    public required int CurrentPage { get; init; }
+    
+    [Parameter, EditorRequired]
+    public required int TotalPages { get; init; }
+    
+    /// <summary>
+    /// Given a page number, returns a link to that page
+    /// </summary>
+    [Parameter, EditorRequired]
+    public required Func<int, string> GetLinkToPage { get; init; }
+}
