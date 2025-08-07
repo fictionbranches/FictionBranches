@@ -19,15 +19,13 @@
     {
         <p><a href="@($"/fb/story/{Comment.EpisodeGenerated!.Generatedid}")">@Comment.EpisodeGenerated.Link</a></p>
     }
-    <p><a href="@($"{PagePath}#comment{Comment.Id}")">@Comment.Date</a></p>
+    <p><a href="@($"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}#comment{Comment.Id}")">@Comment.Date</a></p>
 </div>
 
 @code {
     [Parameter, EditorRequired]
     public required Fbcomment Comment { get; init; }
-
-    private string PagePath => $"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}";
-
+    
     [Parameter] public bool ShowAuthor { get; init; } = false;
     [Parameter] public bool ShowEpisode { get; init; } = false;
 }

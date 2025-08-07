@@ -35,8 +35,8 @@ else
     
     <p>
         <a href="@(episode.ParentGeneratedid != null ? $"/fb/story/{episode.ParentGeneratedid}" : "/fb")">Return to Parent Episode</a><br/>
-        <a href="/fb/story/@GeneratedId#children">Jump to child episodes</a><br/>
-        <a href="/fb/story/@GeneratedId#comments">Jump to comments</a><br/>
+        <a href="@($"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}#children")">Jump to child episodes</a><br/>
+        <a href="@($"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}#comments")">Jump to comments</a><br/>
     </p>
     
     <hr/>
@@ -144,11 +144,4 @@ else
             .ToList();
         
     }
-
-    // // Redirect to this same page, but with a query param
-    // private void HandleChildSortSubmit()
-    // {
-    //     System.Diagnostics.Debug.WriteLine("******** HandleChildSortSubmit ");
-    //     NavMan.NavigateTo($"/fb/story/{GeneratedId}?sort={sortModel.ChildSort.GetDisplayShortName()}");
-    // }
 }
