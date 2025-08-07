@@ -124,7 +124,7 @@ else
             .Include(e => e.Editor)
             .Include(e => e.Fbcomments)
                 .ThenInclude(e => e.User)
-            .Include(e => e.Fbepisodetags)
+            .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag)
             .Include(e => e.Fbepisodeviews)
             .Include(e => e.Fbupvotes)
@@ -139,7 +139,7 @@ else
 
         episode.InverseParentGenerated = orderBy(Db.Fbepisodes
             .Where(e => e.ParentGeneratedid == GeneratedId))
-            .Include(e => e.Fbepisodetags)
+            .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag)
             .ToList();
         
