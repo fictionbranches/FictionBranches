@@ -1,8 +1,14 @@
 @foreach (var tag in Tags)
 {
-    <TagDisplay Tag="tag" />
+    <TagDisplay Tag="tag" Story="@Story" SelectedTagShortName="@SelectedTagShortName" />
 }
 @code {
     [Parameter, EditorRequired]
     public required IEnumerable<Fbtag> Tags { get; init; }
+    
+    [Parameter]
+    public string? Story { get; init; }
+    
+    [Parameter]
+    public string? SelectedTagShortName { get; init; }
 }

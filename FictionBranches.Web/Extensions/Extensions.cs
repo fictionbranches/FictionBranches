@@ -57,4 +57,20 @@ public static class HttpContextExtensions
     {
         return httpContext?.Request == null ? null : $"{httpContext.Request.Path}{httpContext.Request.QueryString}";
     }
+
+    public static string ToQueryString(this Dictionary<string, object?> queryParams)
+    {
+        if (queryParams.Count == 0)
+            return "";
+        return "?" + string.Join('&', queryParams.Select(e => ToQueryStringItem(e.Key, e.Value)));
+    }
+
+    private static string ToQueryStringItem(string key, object? value)
+    {
+        var escapedKey = Uri.EscapeDataString(key);
+        if (value == null)
+            return escapedKey;
+        var valueString = value?.ToString();
+        return string.IsNullOrWhiteSpace(valueString) ? escapedKey : $"{escapedKey}={Uri.EscapeDataString(valueString)}";
+    }
 }

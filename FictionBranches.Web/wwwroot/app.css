@@ -65,9 +65,9 @@ h1:focus {
 
 
 span.fbtag {
-    background: #aaa;
+    background: #aaaaaa;
     border-radius: 3px;
-    color: #111;
+    color: #111111;
     display: inline-block;
     height: 20px;
     line-height: 20px;
@@ -77,6 +77,22 @@ span.fbtag {
 }
 
 a.fbtag {
+    color: inherit !important;
+}
+
+span.fbtag-selected {
+    background: #777777;
+    border-radius: 3px;
+    color: #111111;
+    display: inline-block;
+    height: 20px;
+    line-height: 20px;
+    padding: 1px 5px 1px 5px;
+    position: relative;
+    margin: 0 2px 0 2px;
+}
+
+a.fbtag-selected {
     color: inherit !important;
 }
 

@@ -1,8 +1,21 @@
-<span class="fbtag" title="@($"{Tag.Shortname} - {Tag.Longname}")">
-    <a class="fbtag" href="/fb/recent?tag=@Tag.Shortname">@Tag.Shortname</a>
-</span>
+@if (!string.IsNullOrWhiteSpace(SelectedTagShortName) && Tag.Shortname.ToLower().Equals(SelectedTagShortName.ToLower()))
+{
+    <span class="fbtag-selected" title="@($"{Tag.Shortname} - {Tag.Longname}")">@Tag.Shortname</span>
+}
+else
+{
+    <span class="fbtag" title="@($"{Tag.Shortname} - {Tag.Longname}")">
+        <a class="fbtag" href="@($"/fb/recent?tag={Tag.Shortname}{(string.IsNullOrWhiteSpace(Story) ? "" : $"&story={Story}")}")">@Tag.Shortname</a>
+    </span>
+}
 
 @code {
     [Parameter, EditorRequired]
     public required Fbtag Tag { get; init; }
+    
+    [Parameter]
+    public string? Story { get; init; }
+    
+    [Parameter]
+    public string? SelectedTagShortName { get; init; }
 }

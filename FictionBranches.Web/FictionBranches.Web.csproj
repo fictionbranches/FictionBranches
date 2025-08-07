@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishSingleFile>true</PublishSingleFile>
     <UserSecretsId>626db032-d260-4bc4-a0f6-0fff4abff349</UserSecretsId>
+    <GenerateFingerprintForStaticAssets>true</GenerateFingerprintForStaticAssets>
   </PropertyGroup>
 
   <ItemGroup>
