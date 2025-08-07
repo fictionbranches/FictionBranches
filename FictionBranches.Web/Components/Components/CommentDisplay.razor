@@ -19,7 +19,7 @@
     {
         <p><a href="@($"/fb/story/{Comment.EpisodeGenerated!.Generatedid}")">@Comment.EpisodeGenerated.Link</a></p>
     }
-    <p><a href="@($"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}#comment{Comment.Id}")">@Comment.Date</a></p>
+    <p><a href="@($"{HttpContextAccessor?.HttpContext?.GetPathWithQuery()}#comment{Comment.Id}")">@Comment.Date</a></p>
 </div>
 
 @code {

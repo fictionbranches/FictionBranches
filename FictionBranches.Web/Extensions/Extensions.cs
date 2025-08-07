@@ -50,3 +50,11 @@ public static class StringExtensions
         return a is null ? b is null : string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+public static class HttpContextExtensions
+{
+    public static string? GetPathWithQuery(this HttpContext? httpContext)
+    {
+        return httpContext?.Request == null ? null : $"{httpContext.Request.Path}{httpContext.Request.QueryString}";
+    }
+}

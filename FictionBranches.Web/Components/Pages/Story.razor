@@ -35,8 +35,8 @@ else
     
     <p>
         <a href="@(episode.ParentGeneratedid != null ? $"/fb/story/{episode.ParentGeneratedid}" : "/fb")">Return to Parent Episode</a><br/>
-        <a href="@($"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}#children")">Jump to child episodes</a><br/>
-        <a href="@($"{HttpContextAccessor?.HttpContext?.Request?.Path}{HttpContextAccessor?.HttpContext?.Request?.QueryString}#comments")">Jump to comments</a><br/>
+        <a href="@($"{HttpContextAccessor?.HttpContext?.GetPathWithQuery()}#children")">Jump to child episodes</a><br/>
+        <a href="@($"{HttpContextAccessor?.HttpContext?.GetPathWithQuery()}#comments")">Jump to comments</a><br/>
     </p>
     
     <hr/>
