@@ -17,12 +17,15 @@
 <hr />
 
 <h2>Choose a story</h2>
-
+<a href="/fb/recent">Recently added episodes</a>
 <hr/>
 
 @foreach (var root in RootEpisodeCache.Roots)
 {
-    <h3>
-        <a href="/fb/story/@root.Generatedid">@root.Link</a> (@root.Childcount)
-    </h3>
+    <p class="mb-4">
+        <h3 class="my-2">
+            <a href="/fb/story/@root.Generatedid">@root.Link</a> (@root.Childcount)
+        </h3>
+        <a href="/fb/recent?story=@root.Generatedid">@root.Link's recently added episodes</a>
+    </p>
 }
