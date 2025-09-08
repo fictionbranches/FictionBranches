@@ -43,7 +43,7 @@ else
     
     <hr/>
     
-    <a name="children" />
+    <a id="children"></a>
     @if (episode.InverseParentGenerated.Count > 0)
     {
         <form method="GET">
@@ -66,12 +66,22 @@ else
         <hr/>
     }
 
-    <a name="comments" />
+    <a id="comments"></a>
     @foreach (var comment in episode.Fbcomments)
     {
         <CommentDisplay Comment="comment" ShowAuthor="true" />
     }
 }
+
+<SectionContent SectionName="@Names.AdditionalSidebar">
+    <SidebarSection Title="Path">
+        @foreach (var ep in pathbox)
+        {
+            <p>@(ep.Newmap.Split('B').Length). <EpisodeLink Episode="ep" /></p>
+        }
+    </SidebarSection>
+</SectionContent>
+
 @code {
     [Parameter]
     public long GeneratedId { get; init; }
@@ -88,6 +98,8 @@ else
     
     private Fbepisode? episode;
 
+    private List<Fbepisode?> pathbox;
+    
     private const string SortCookieName = "fbchildsort";
     
     protected override void OnInitialized()
@@ -137,6 +149,11 @@ else
             .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag)
             .ToList();
-        
+
+        var path = episode.Newmap.Substring(1).Split('B').Select(long.Parse).ToList();
+        if (path.Count > 20)
+            path.RemoveRange(0, path.Count - 20);
+
+        pathbox = Db.Fbepisodes.Where(e => path.Contains(e.Generatedid)).OrderByDescending(e => e.Generatedid).ToList();
     }
 }

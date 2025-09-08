@@ -1,0 +1,5 @@
+﻿@page "/{*path}"
+<NotFound Item="@(Path == null ? null : Path.StartsWith("/fb/") ? Path[4..] : Path.StartsWith("fb/") ? Path[3..] : Path)" />
+@code {
+    [Parameter] public string? Path { get; init; }
+}
