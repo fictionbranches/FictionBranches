@@ -42,6 +42,26 @@ builder.Services.AddScheduler();
 
 var app = builder.Build();
 
+// Check for migration command line argument
+if (args.Contains("--migrate") || args.Contains("migrate"))
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        Console.WriteLine("Applying migrations...");
+        context.Database.Migrate();
+        Console.WriteLine("Migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
+        return 1; // Exit with error code
+    }
+    return 0; // Exit successfully
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -68,3 +88,5 @@ app.Services.UseScheduler(scheduler =>
 });
 
 app.Run();
+
+return 0;
