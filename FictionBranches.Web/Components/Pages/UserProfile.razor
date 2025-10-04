@@ -2,7 +2,7 @@
 
 @inject IHttpContextAccessor HttpContextAccessor
 
-@inject ApplicationDbContext Db
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
 @inject RootEpisodeCache RootEpisodeCache
 
@@ -108,7 +108,9 @@ else
 
         isFirstPage = page == 1;
 
-        user = Db.Fbusers
+        var db = DbContextFactory.CreateDbContext();
+        
+        user = db.Fbusers
             .FirstOrDefault(e => e.Id == Id.ToLower());
 
         if (user is null)
@@ -120,7 +122,7 @@ else
         if (Comments is null)
         {
             // show recent episodes
-            user.FbepisodeAuthors = Db.Fbepisodes
+            user.FbepisodeAuthors = db.Fbepisodes
                 .Where(e => e.AuthorId == user.Id)
                 .OrderByDescending(e => e.Date)
                 .Skip(pageSize * (page-1))
@@ -132,7 +134,7 @@ else
         else
         {
             // show recent comments
-            user.FbcommentUsers = Db.Fbcomments
+            user.FbcommentUsers = db.Fbcomments
                 .Include(e => e.EpisodeGenerated)
                 .Where(e => e.UserId == user.Id)
                 .OrderByDescending(e => e.Date)

@@ -3,7 +3,7 @@
 
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavMan
-@inject ApplicationDbContext Db
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject RootEpisodeCache RootEpisodeCache
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
 
@@ -21,7 +21,7 @@ else
         {
             <a href="@($"/fb/recent{(Story == null ? "" : $"?story={Story}")}")">Unselect</a><span>&nbsp;</span>
         }
-        <TagListDisplay SelectedTagShortName="@Tag" Tags="Db.Fbtags.OrderBy(e => e.Shortname).ToList()" Story="@Story?.ToString()"/>
+        <TagListDisplay SelectedTagShortName="@Tag" Tags="Tags" Story="@Story?.ToString()"/>
     </p>
     
     <p>
@@ -79,6 +79,8 @@ else
     
     private Fbepisode? root;
 
+    private IEnumerable<Fbtag> Tags = [];
+
     private string pageTitle => root == null ? "Recent episodes" : $"Recent episodes for \"{root.Link}\"";
 
     private IEnumerable<Fbepisode>? recents;
@@ -93,6 +95,10 @@ else
     {
         base.OnInitialized();
 
+        var db = DbContextFactory.CreateDbContext();
+
+        Tags = db.Fbtags.OrderBy(e => e.Shortname).ToList();
+        
         if (Story != null)
         {
             root = RootEpisodeCache.GetEpisode(Story.Value);
@@ -113,7 +119,7 @@ else
         Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> tagWhereClause = query => query;
         if (!string.IsNullOrWhiteSpace(Tag))
         {
-            var tag = Db.Fbtags.Where(e => e.Shortname.ToLower().Equals(Tag.ToLower())).FirstOrDefault();
+            var tag = db.Fbtags.Where(e => e.Shortname.ToLower().Equals(Tag.ToLower())).FirstOrDefault();
             if (tag == null)
             {
                 itemNotFound = Tag;
@@ -134,7 +140,7 @@ else
             .ThenInclude(e => e.Tag);
 
         
-        var totalEpisodes = whereClause(Db.Fbepisodes).Count();
+        var totalEpisodes = whereClause(db.Fbepisodes).Count();
         (totalPages, var extraPages) = Math.DivRem(totalEpisodes, FbConfig.CurrentValue.PageSize);
         if (extraPages > 0)
             ++totalPages;
@@ -151,7 +157,7 @@ else
             return;
         }
         
-        recents = orderByClause(countIncludeClause(whereClause(Db.Fbepisodes)))
+        recents = orderByClause(countIncludeClause(whereClause(db.Fbepisodes)))
             .Include(e => e.Author)
             .Skip(FbConfig.CurrentValue.PageSize * actualPage)
             .Take(FbConfig.CurrentValue.PageSize)

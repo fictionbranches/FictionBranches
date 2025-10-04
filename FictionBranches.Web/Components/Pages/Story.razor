@@ -2,7 +2,7 @@
 
 @inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavMan
-@inject ApplicationDbContext Db
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
 @if (episode is null)
 {
@@ -104,13 +104,14 @@ else
     
     protected override void OnInitialized()
     {
-        base.OnInitialized(); 
+        base.OnInitialized();
 
+        var db = DbContextFactory.CreateDbContext();
+        
         // if Sort query-param is set, set cookie and redirect
         if (!string.IsNullOrWhiteSpace(Sort))
         {
             var childSort = ChildSortHelper.GetFromShortName(Sort);
-            System.Diagnostics.Debug.WriteLine("******* Setting childSort to " + childSort.GetDisplayShortName());
             HttpContextAccessor.HttpContext!.Response.Cookies.Append(SortCookieName, childSort.GetDisplayShortName());
             NavMan.NavigateTo($"/fb/story/{GeneratedId}#children");
             return;
@@ -129,7 +130,7 @@ else
             _ => query => query.OrderBy(e => e.Date),
         }; 
         
-        episode = Db.Fbepisodes
+        episode = db.Fbepisodes
             .Include(e => e.Author)
             .Include(e => e.Editor)
             .Include(e => e.Fbcomments)
@@ -144,7 +145,7 @@ else
         if (episode is null)
             return; // 404
 
-        episode.InverseParentGenerated = orderBy(Db.Fbepisodes
+        episode.InverseParentGenerated = orderBy(db.Fbepisodes
             .Where(e => e.ParentGeneratedid == GeneratedId))
             .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag)
@@ -154,6 +155,6 @@ else
         if (path.Count > 20)
             path.RemoveRange(0, path.Count - 20);
 
-        pathbox = Db.Fbepisodes.Where(e => path.Contains(e.Generatedid)).OrderByDescending(e => e.Generatedid).ToList();
+        pathbox = db.Fbepisodes.Where(e => path.Contains(e.Generatedid)).OrderByDescending(e => e.Generatedid).ToList();
     }
 }
