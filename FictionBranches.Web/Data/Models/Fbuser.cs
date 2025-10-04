@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace FictionBranches.Web.Data.Models;
 
-public partial class Fbuser
+public partial class Fbuser : IdentityUser
 {
-    public string Id { get; set; } = null!;
-
     public string? Author { get; set; }
 
     public string? Avatar { get; set; }
@@ -14,13 +11,9 @@ public partial class Fbuser
     public string? Bio { get; set; }
 
     public DateTime? Date { get; set; }
-
-    public string? Email { get; set; }
-
+    
     public short Level { get; set; }
-
-    public string? Password { get; set; }
-
+    
     public string? Theme { get; set; }
 
     public bool Commentsite { get; set; }
@@ -88,4 +81,12 @@ public partial class Fbuser
     public virtual ICollection<Fbupvote> Fbupvotes { get; set; } = new List<Fbupvote>();
 
     public virtual Fbtheme? ThemeNameNavigation { get; set; }
+    
+    // Override Identity properties to work with your schema
+    public override string Id { get; set; } = null!;
+    public override string? UserName 
+    { 
+        get => Id; 
+        set => Id = value ?? string.Empty; 
+    }
 }

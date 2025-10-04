@@ -1,5 +1,10 @@
 ﻿@inherits LayoutComponentBase
 
+@inject UserManager<Fbuser> UserManager
+@inject SignInManager<Fbuser> SignInManager
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IdentityRedirectManager RedirectManager
+
 <CascadingValue Value="@this">
     
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -36,14 +41,36 @@
                     <div class="offcanvas-header">
                         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
                     </div>
-                    <div id="sidebar-content-mobile" class="offcanvas-body">
-                        @* @SidebarContent *@
-                    </div>
+                    <div id="sidebar-content-mobile" class="offcanvas-body">@* poplated by javascript *@</div>
                 </div>
 
                 <!-- Desktop static sidebar -->
                 <div id="sidebar-content-desktop" class="d-none d-lg-block position-sticky" style="top: 1rem;">
-                    @SidebarContent
+                    <div>
+                        <SidebarSection>
+                            @if (user is null)
+                            {
+                                <p><a href="/fb/account/login">Log in</a></p>
+                            }
+                            else
+                            {
+                                <p>Logged in as @username</p>
+                                @if (user.Level >= 100)
+                                {
+                                    <p>You are an Admin</p>
+                                }
+                                else if (user.Level >= 10)
+                                {
+                                    <p>You are a Moderator</p>
+                                }
+                                else
+                                {
+                                    <p>You are a User</p>
+                                }
+                            }
+                        </SidebarSection>
+                        <SectionOutlet SectionName="@Names.AdditionalSidebar" />
+                    </div>
                 </div>
             </aside>
         </div>
@@ -58,21 +85,23 @@
         clone.innerHTML = original.innerHTML;
     }
 </script>
-@code {
-    
-    private RenderFragment SidebarContent => @<div>
-                                                 
-        <SidebarSection>
-            <p>(Login form and such will go here eventually)</p>
-        </SidebarSection>
-        
-        <SectionOutlet SectionName="@Names.AdditionalSidebar" />
-        
-    </div>;
-}
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    
+    private Fbuser? user = null;
+    private string? username;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserManager.GetUserAsync(HttpContextAccessor.HttpContext.User);
+        if (user != null)
+            username = await UserManager.GetUserNameAsync(user);
+    }
+    
+}

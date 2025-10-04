@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using FictionBranches.Web.Data.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace FictionBranches.Web.Data;
@@ -68,6 +69,46 @@ public partial class ApplicationDbContext : DbContext
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Add Identity entity configurations
+        // Configure Identity entities with their primary keys
+        modelBuilder.Entity<IdentityRole>(entity =>
+        {
+            entity.ToTable("roles");
+            entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<IdentityUserClaim<string>>(entity =>
+        {
+            entity.ToTable("userclaims");
+            entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<IdentityUserLogin<string>>(entity =>
+        {
+            entity.ToTable("userlogins");
+            entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
+        });
+
+        modelBuilder.Entity<IdentityUserToken<string>>(entity =>
+        {
+            entity.ToTable("usertokens");
+            entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
+        });
+
+        modelBuilder.Entity<IdentityUserRole<string>>(entity =>
+        {
+            entity.ToTable("userroles");
+            entity.HasKey(e => new { e.UserId, e.RoleId });
+        });
+
+        modelBuilder.Entity<IdentityRoleClaim<string>>(entity =>
+        {
+            entity.ToTable("roleclaims");
+            entity.HasKey(e => e.Id);
+        });
+        
+        
+        
         modelBuilder.Entity<Fbannouncement>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("fbannouncements_pkey");
@@ -769,9 +810,6 @@ public partial class ApplicationDbContext : DbContext
                 .HasDefaultValue(false)
                 .HasColumnName("hideimages");
             entity.Property(e => e.Level).HasColumnName("level");
-            entity.Property(e => e.Password)
-                .HasMaxLength(255)
-                .HasColumnName("password");
             entity.Property(e => e.Theme)
                 .HasMaxLength(255)
                 .HasColumnName("theme");
@@ -782,11 +820,21 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.ThemeNameNavigation).WithMany(p => p.Fbusers)
                 .HasForeignKey(d => d.ThemeName)
                 .HasConstraintName("fkrbykt6si6h8et3vny0uyfhvi2");
+            
+            // Tell EF to ignore UserName as a column since it's computed from Id
+            entity.Ignore(e => e.UserName);
+            
+            entity.Property(e => e.PasswordHash)
+                .HasMaxLength(255)
+                .HasColumnName("password");
+            entity.Property(e => e.SecurityStamp).HasDefaultValueSql("gen_random_uuid()::text");
+            entity.Property(e => e.ConcurrencyStamp).HasDefaultValueSql("gen_random_uuid()::text");
+            entity.Property(e => e.NormalizedUserName).HasComputedColumnSql("UPPER([id])");
+            entity.Property(e => e.NormalizedEmail).HasComputedColumnSql("UPPER([email])");
+            
+            
+            
         });
         modelBuilder.HasSequence("hibernate_sequence");
-
-        OnModelCreatingPartial(modelBuilder);
     }
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
