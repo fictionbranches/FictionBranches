@@ -26,7 +26,8 @@ builder.Services.AddIdentity<Fbuser, IdentityRole>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders()
-    .AddSignInManager<CustomSignInManager<Fbuser>>();
+    .AddSignInManager<CustomSignInManager<Fbuser>>()
+    .AddClaimsPrincipalFactory<CustomClaimsPrincipalFactory>();
 
 // builder.Services.AddScoped<IUserStore<Fbuser>, UserOnlyStore<Fbuser, ApplicationDbContext>>();
 builder.Services.AddScoped<IPasswordHasher<Fbuser>, BCryptPasswordHasher<Fbuser>>();

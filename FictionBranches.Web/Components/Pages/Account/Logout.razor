@@ -1,0 +1,22 @@
+@page "/fb/account/logout"
+
+@inject CustomSignInManager<Fbuser> SignInManager
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log out</PageTitle>
+
+<h1>Log out</h1>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await SignInManager.SignOutAsync();
+        RedirectManager.RedirectTo(ReturnUrl);
+    }
+
+}

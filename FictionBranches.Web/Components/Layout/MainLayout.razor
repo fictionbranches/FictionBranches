@@ -1,65 +1,68 @@
 ﻿@inherits LayoutComponentBase
 
-@inject UserManager<Fbuser> UserManager
 @inject SignInManager<Fbuser> SignInManager
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IdentityRedirectManager RedirectManager
+@inject IOptionsMonitor<FictionBranchesOptions> FbConfig
+@inject UserManager<Fbuser> UserManager
 
-<CascadingValue Value="@this">
-    
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <div class="container">
-            <a href="/">
-                <img src="/fblogo.png" alt="Fiction Branches"/>
-            </a>
-            <!-- Mobile toggle button -->
-            <button class="btn btn-outline-secondary btn-lg d-lg-none ms-auto"
-                    type="button"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#sidebar"
-                    aria-controls="sidebar"
-                    aria-label="Open sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-        </div>
-    </nav>
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container">
+        <a href="/">
+            <img src="/fblogo.png" alt="Fiction Branches"/>
+        </a>
+        <!-- Mobile toggle button -->
+        <button class="btn btn-outline-secondary btn-lg d-lg-none ms-auto"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#sidebar"
+                aria-controls="sidebar"
+                aria-label="Open sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+    </div>
+</nav>
 
-    <div class="container py-4">
-        <div class="row g-2">
-            <!-- Main content -->
-            <main class="col-12 col-lg-8 order-2 order-lg-1">
-                @Body
-            </main>
+<div class="container py-4">
+    <div class="row g-2">
+        <!-- Main content -->
+        <main class="col-12 col-lg-8 order-2 order-lg-1">
+            @Body
+        </main>
 
-            <!-- Sidebar -->
-            <aside class="col-12 col-lg-4 order-1 order-lg-2">
-                <!-- Mobile offcanvas -->
-                <div class="offcanvas offcanvas-end d-lg-none"
-                     tabindex="-1"
-                     id="sidebar"
-                     aria-labelledby="sidebarLabel">
-                    <div class="offcanvas-header">
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-                    </div>
-                    <div id="sidebar-content-mobile" class="offcanvas-body">@* poplated by javascript *@</div>
+        <!-- Sidebar -->
+        <aside class="col-12 col-lg-4 order-1 order-lg-2">
+            <!-- Mobile offcanvas -->
+            <div class="offcanvas offcanvas-end d-lg-none"
+                 tabindex="-1"
+                 id="sidebar"
+                 aria-labelledby="sidebarLabel">
+                <div class="offcanvas-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
                 </div>
+                <div id="sidebar-content-mobile" class="offcanvas-body">@* poplated by javascript *@</div>
+            </div>
 
-                <!-- Desktop static sidebar -->
-                <div id="sidebar-content-desktop" class="d-none d-lg-block position-sticky" style="top: 1rem;">
-                    <div>
-                        <SidebarSection>
-                            @if (user is null)
+            <!-- Desktop static sidebar -->
+            <div id="sidebar-content-desktop" class="d-none d-lg-block position-sticky" style="top: 1rem;">
+                <div>
+                    <SidebarSection>
+                        @if (!HttpContextAccessor.HttpContext.User.IsLoggedIn())
+                        {
+                            <p><a class="btn btn-primary" href="/fb/account/login?ReturnURL=@HttpContextAccessor.HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-in-right" /> Log in</a></p>
+                        }
+                        else
+                        {
+                            <p>Logged in as @HttpContextAccessor.HttpContext.User.AuthorName()</p>
+                            <p><a class="btn btn-primary" href="/fb/account/logout?ReturnURL=@HttpContextAccessor.HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-right" /> Log out</a></p>
+                                
+                            @if (FbConfig.CurrentValue.DevMode)
                             {
-                                <p><a href="/fb/account/login">Log in</a></p>
-                            }
-                            else
-                            {
-                                <p>Logged in as @username</p>
-                                @if (user.Level >= 100)
+                                @if (HttpContextAccessor.HttpContext.User.Level() >= 100)
                                 {
                                     <p>You are an Admin</p>
                                 }
-                                else if (user.Level >= 10)
+                                else if (HttpContextAccessor.HttpContext.User.Level() >= 10)
                                 {
                                     <p>You are a Moderator</p>
                                 }
@@ -68,15 +71,14 @@
                                     <p>You are a User</p>
                                 }
                             }
-                        </SidebarSection>
-                        <SectionOutlet SectionName="@Names.AdditionalSidebar" />
-                    </div>
+                        }
+                    </SidebarSection>
+                    <SectionOutlet SectionName="@Names.AdditionalSidebar" />
                 </div>
-            </aside>
-        </div>
+            </div>
+        </aside>
     </div>
-    
-</CascadingValue>
+</div>
 
 <script>
     const original = document.getElementById('sidebar-content-desktop');
@@ -91,17 +93,3 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
-
-@code {
-    
-    private Fbuser? user = null;
-    private string? username;
-
-    protected override async Task OnInitializedAsync()
-    {
-        user = await UserManager.GetUserAsync(HttpContextAccessor.HttpContext.User);
-        if (user != null)
-            username = await UserManager.GetUserNameAsync(user);
-    }
-    
-}
