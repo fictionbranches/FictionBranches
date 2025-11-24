@@ -1,6 +1,9 @@
 function createMarkdownBase() {
 	var md = markdownit('commonmark',{breaks: true}).use(markdownitCentertext);
 	md.enable(['table','strikethrough']);
+	md.renderer.rules.table_open = function(tokens, idx) {
+		return '<table class="table table-striped table-hover">';
+	};
 	return md;
 }
 

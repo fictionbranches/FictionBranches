@@ -1,0 +1,389 @@
+@page "/fb/add/{ParentGeneratedId:long}"
+@page "/fb/modify/{GeneratedId:long}"
+@page "/fb/addnewroot"
+
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject NavigationManager NavMan
+
+<AuthorizeView>
+    <NotAuthorized>
+        <PageTitle>You must be logged in to do that.</PageTitle>
+        You must be logged in to do that.
+    </NotAuthorized>
+    <Authorized Context="authContext">
+
+        @if (notFound)
+        {
+            <NotFound Item="@((ParentGeneratedId ?? GeneratedId).ToString())"/>
+        }
+        else if (notAllowed)
+        {
+            <p>You are not allowed to do that.</p>
+        }
+        else
+        {
+            @if (ParentGeneratedId != null)
+            {
+                <h3>Add to '@Episode!.ParentGenerated!.Link'</h3>
+            }
+            else if (GeneratedId != null)
+            {
+                <h3>Modifying '@Episode!.Link'</h3>
+            }
+            else
+            {
+                <h3>Add new root episode</h3>
+            }
+            
+            <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmit" FormName="StoryAddEditForm">
+                
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                
+                <ValidatingInputText @bind-Value="Input.Title" id="Input.Title" Label="Title"
+                                     type="text" placeholder="And So It Begins..." ClassList="mb-3"/>
+                
+                <div id="buttonToggleGroup" class="mb-3">
+                    <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#formattingHelp" role="button"
+                            aria-expanded="false" aria-controls="formattingHelp">
+                        Formatting help
+                    </button>
+                    @if (Episode?.ParentGenerated != null)
+                    {
+                        <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previousEpisodeBody"
+                                role="button"
+                                aria-expanded="false" aria-controls="previousEpisodeBody">
+                            Previous episode
+                        </button>
+                    }
+                    <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previewMarkdown" role="button"
+                            aria-expanded="false" aria-controls="previewMarkdown">
+                        Preview markdown
+                    </button>
+                    <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="formattingHelp">
+                        <div class="card card-body">
+                            <MarkdownFormattingHelp/>
+                        </div>
+                    </div>
+                    @if (Episode?.ParentGenerated != null)
+                    {
+                        <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previousEpisodeBody">
+                            <div class="card card-body">
+                                <EpisodeLink Episode="Episode.ParentGenerated"/>
+                                <h5>@Episode.ParentGenerated.Title</h5>
+                                <div class="fbepisodebody fbrawmarkdown">@Episode.ParentGenerated.Body</div>
+                            </div>
+                        </div>
+                    }
+                    <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previewMarkdown">
+                        <div class="card card-body" id="previewDiv"></div>
+                    </div>
+                </div>
+
+                <ValidatingInputText @bind-Value="Input.Body" id="Input.Body" Label="Body"
+                                     IsTextArea="true" rows="20" ClassList="mb-3"
+                                     placeholder="I sat on the wall after class, nervously fingering the box and swinging my legs. It was the first day of school..."/>
+                
+                <ValidatingInputText @bind-Value="Input.Link" Label="Link"
+                                     type="text" placeholder="You Are What You Wish" ClassList="mb-3"/>
+                
+                <InputNumber type="hidden" Value="@Input.Generatedid" ValueExpression="()=>Input.Generatedid" />
+                <InputNumber type="hidden" Value="@Input.ParentGeneratedid" ValueExpression="()=>Input.ParentGeneratedid" />
+                
+                <button type="submit" class="btn btn-primary">@submitButtonText</button>
+            </EditForm>
+        }
+    </Authorized>
+</AuthorizeView>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const bodyTextArea = document.getElementById('Input.Body');
+        const previewDiv = document.getElementById('previewDiv');
+        if (bodyTextArea && previewDiv) {
+            const onBodyChange = () => {
+                const body = bodyTextArea.value;
+                previewDiv.innerHTML = '';
+                const div = document.createElement('div');
+                div.innerHTML = markdownToHTML(body);
+                previewDiv.appendChild(div);
+            };
+
+            bodyTextArea.addEventListener('input', () => onBodyChange());
+            onBodyChange();
+        }
+    });
+</script>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+    
+    [CascadingParameter]
+    private EditContext? CurrentEditContext { get; set; }
+    
+    [Parameter] public long? GeneratedId { get; init; }
+    [Parameter] public long? ParentGeneratedId { get; init; }
+    
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private Fbepisode? Episode;
+    
+    private bool notFound = false;
+    private bool notAllowed = false;
+    
+    private string submitButtonText => ParentGeneratedId != null ? "Add new episode" : GeneratedId != null ? "Modify episode" : "Add new root episode";
+        
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        bool isPost;
+        switch (HttpContext.Request.Method.ToLower())
+        {
+            case "post":
+                isPost = true;
+                break;
+            case "get":
+                isPost = false;
+                break;
+            default:
+                RedirectOnError();
+                return;
+        }
+
+        using var db = DbContextFactory.CreateDbContext();
+
+        if (ParentGeneratedId != null) // adding a new episode
+        {
+            var parentEpisode = db.Fbepisodes.Find(ParentGeneratedId);
+            if (parentEpisode == null)
+            {
+                notFound = true;
+                return;
+            }
+
+            Episode = newEpisode(parentEpisode);
+            
+        }
+        else if (GeneratedId != null) // modifying an existing episode
+        {
+            Episode = db.Fbepisodes
+                .Where(e => e.Generatedid == GeneratedId)
+                .Include(e => e.ParentGenerated)
+                .FirstOrDefault();
+            if (Episode == null)
+            {
+                notFound = true;
+                return;
+            }
+
+            if (HttpContext.User.Username() != Episode.AuthorId &&
+                !HttpContext.User.IsMod())
+            {
+                notAllowed = true;
+            }
+        }
+        else // adding a new root
+        {
+            if (!HttpContext.User.IsAdmin())
+            {
+                notAllowed = true;
+                return;
+            }
+
+            Episode = newEpisode();
+        }
+
+        if (!isPost)
+        {
+            Input.Title = Episode?.Title ?? "";
+            Input.Link = Episode?.Link ?? "";
+            Input.Body = Episode?.Body ?? "";
+            Input.Generatedid = Episode?.Generatedid ?? 0;
+            Input.ParentGeneratedid = Episode?.ParentGeneratedid ?? 0;
+        }
+    }
+
+    private Fbepisode newEpisode(Fbepisode? parent = null) => new()
+    {
+        Title = "",
+        Link = "",
+        Body = "",
+        AuthorId = HttpContext.User.Username(),
+        ParentGenerated = parent,
+        ParentGeneratedid = parent?.Generatedid
+    };
+
+    private void OnValidSubmit()
+    {
+        if (!HttpContext.Request.Method.EqualsIgnoreCase("post"))
+        {
+            RedirectOnError();
+            return;
+        }
+
+        // TODO handle tags, like at all
+
+        var now = DateTimeExtensions.UnspecifiedNow;
+
+        if (Input.Generatedid != 0) // modifying an existing episode
+        {
+            OnSubmitModifyEpisode();
+        }
+        else if (Input.ParentGeneratedid != 0) // adding a new episode
+        {
+            OnSubmitAddEpisode();
+        }
+        else // adding a new root
+        {
+            // TODO this part, and the associated UI to get here somehow
+        }
+
+        RedirectOnError();
+    }
+
+    private void OnSubmitModifyEpisode()
+    {
+        using var db = DbContextFactory.CreateDbContext();
+        var now = DateTimeExtensions.UnspecifiedNow;
+        
+        var episode = db.Fbepisodes.Find(Input.Generatedid);
+        if (episode == null)
+        {
+            RedirectOnError();
+            return;
+        }
+        if (HttpContext.User.Username() != episode.AuthorId &&
+            !HttpContext.User.IsMod())
+        {
+            NavMan.NavigateTo("/fb/AccessDenied");
+            return;
+        }
+
+        if (Input.Title.Equals(episode.Title) && Input.Link.Equals(episode.Link) && Input.Body.Equals(episode.Body))
+        {
+            RedirectOnError();
+            return;
+        }
+
+        episode.Title = Input.Title;
+        episode.Body = Input.Body;
+        episode.Link = Input.Link;
+        episode.EditorId = HttpContext.User.Username();
+        episode.Editdate = now;
+
+        db.SaveChanges();
+        NavMan.NavigateTo($"/fb/story/{episode.Generatedid}");
+    }
+
+    private void OnSubmitAddEpisode()
+    {
+        using var db = DbContextFactory.CreateDbContext();
+        var now = DateTimeExtensions.UnspecifiedNow;
+
+        var parentNewmap = db.Fbepisodes
+                .Where(e => Input.ParentGeneratedid.Equals(e.Generatedid))
+                .Select(e => e.Newmap)
+                .FirstOrDefault();
+            if (string.IsNullOrEmpty(parentNewmap))
+            {
+                RedirectOnError();
+                return;
+            }
+
+            var userId = HttpContext.User.Username();
+            var episode = new Fbepisode
+            {
+                Title = Input.Title,
+                Link = Input.Link,
+                Body = Input.Body,
+                AuthorId = userId,
+                ParentGeneratedid = Input.ParentGeneratedid,
+                Date = now,
+                Childcount = 1,
+                Editdate = now,
+                EditorId = userId
+            };
+            db.Fbepisodes.Add(episode);
+            db.SaveChanges();
+
+            episode.Newmap = $"{parentNewmap}B{episode.Generatedid}";
+            db.SaveChanges();
+
+            var ancestorIds = parentNewmap[1..].Split('B').Select(long.Parse).ToHashSet();
+            db.Fbepisodes
+                .Where(e => ancestorIds.Contains(Input.ParentGeneratedid))
+                .ExecuteUpdate(setters => setters.SetProperty(e => e.Childcount, e => e.Childcount+1));
+            
+            
+            var parentAuthor = db.Fbepisodes
+                .Where(e => Input.ParentGeneratedid.Equals(e.Generatedid))
+                .Include(e => e.Author)
+                .Select(e => e.Author)
+                .FirstOrDefault();
+
+            if (parentAuthor == null)
+            {
+                NavMan.NavigateTo($"/fb/story/{episode.Generatedid}");
+                return;
+            }
+            
+            var sendSiteNotification = false;
+            var sendMailNotification = false;
+            
+            if (!parentAuthor.Id.Equals(episode.AuthorId))
+            { // only send notification if users are different
+                sendSiteNotification = parentAuthor.Childsite;
+                sendMailNotification = parentAuthor.Childmail;
+            }
+
+            if (sendSiteNotification)
+            {
+                var note = new Fbnotification
+                {
+                    Type = Fbnotification.NEW_CHILD_EPISODE,
+                    Date = now,
+                    Read = false,
+                    UserId = parentAuthor.Id,
+                    EpisodeGeneratedid = episode.Generatedid
+                };
+                db.Fbnotifications.Add(note);
+                db.SaveChanges();
+            }
+
+            if (sendMailNotification)
+            {
+                // TODO send emails for new episode added
+            }
+            
+            NavMan.NavigateTo($"/fb/story/{episode.Generatedid}");
+            return;
+    }
+
+    private void RedirectOnError()
+    {
+        if (Input.Generatedid != 0)
+            NavMan.NavigateTo($"/fb/story/{GeneratedId}");
+        else if (Input.ParentGeneratedid != 0)
+            NavMan.NavigateTo($"/fb/story/{ParentGeneratedId}");
+        else
+            NavMan.NavigateTo($"/fb");
+    }
+
+    private sealed class InputModel
+    {
+        [ValidatingStringLength(MinLength = 1, MaxLength = 255)]
+        public string Title { get; set; } = "";
+        
+        [ValidatingStringLength(MinLength = 1, MaxLength = 100000)]
+        public string Body { get; set; } = "";
+        
+        [ValidatingStringLength(MinLength = 1, MaxLength = 255)]
+        public string Link { get; set; } = "";
+        
+        public long Generatedid { get; set; } = 0;
+        public long ParentGeneratedid { get; set; } = 0;
+    }
+}

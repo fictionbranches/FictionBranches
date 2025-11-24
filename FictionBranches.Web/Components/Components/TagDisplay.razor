@@ -1,4 +1,4 @@
-@if (!string.IsNullOrWhiteSpace(SelectedTagShortName) && Tag.Shortname.ToLower().Equals(SelectedTagShortName.ToLower()))
+@if (!string.IsNullOrWhiteSpace(SelectedTagShortName) && Tag.Shortname.EqualsIgnoreCase(SelectedTagShortName))
 {
     <span class="fbtag-selected" title="@($"{Tag.Shortname} - {Tag.Longname}")">@Tag.Shortname</span>
 }

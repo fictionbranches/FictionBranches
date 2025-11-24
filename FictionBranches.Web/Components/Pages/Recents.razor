@@ -1,7 +1,6 @@
 @page "/fb/recent"
 @using System.Text
 
-@inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavMan
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject RootEpisodeCache RootEpisodeCache
@@ -52,7 +51,7 @@ else
                 <tr>
                     <td><EpisodeLink Episode="episode" ShowTitleIfDifferent="true"></EpisodeLink></td>
                     <td><a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a></td>
-                    <td>@episode.Date</td>
+                    <td><DateDisplay Date="episode.Date" /></td>
                     @if (root == null)
                     {
                         <td><a href="@($"/fb/story/{RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)?.Generatedid}")">@RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)?.Link</a></td>
@@ -65,6 +64,9 @@ else
     </table>
 }
 @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     [SupplyParameterFromQuery]
     public long? Story { get; init; }
     
@@ -95,7 +97,7 @@ else
     {
         base.OnInitialized();
 
-        var db = DbContextFactory.CreateDbContext();
+        using var db = DbContextFactory.CreateDbContext();
 
         Tags = db.Fbtags.OrderBy(e => e.Shortname).ToList();
         
@@ -119,7 +121,7 @@ else
         Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> tagWhereClause = query => query;
         if (!string.IsNullOrWhiteSpace(Tag))
         {
-            var tag = db.Fbtags.Where(e => e.Shortname.ToLower().Equals(Tag.ToLower())).FirstOrDefault();
+            var tag = db.Fbtags.FirstOrDefault(e => e.Shortname.ToLower().Equals(Tag.ToLower()));
             if (tag == null)
             {
                 itemNotFound = Tag;
@@ -174,7 +176,7 @@ else
             query.Add("story", Story);
         if (!string.IsNullOrWhiteSpace(Tag))
             query.Add("tag", Tag);
-        return $"{HttpContextAccessor?.HttpContext?.Request.Path}{query.ToQueryString()}";
+        return $"{HttpContext.Request.Path}{query.ToQueryString()}";
     }
 
     private string GetOldestNewestLink()
@@ -186,6 +188,6 @@ else
             query.Add("story", Story);
         if (!string.IsNullOrWhiteSpace(Tag))
             query.Add("tag", Tag);
-        return $"{HttpContextAccessor?.HttpContext?.Request.Path}{query.ToQueryString()}";
+        return $"{HttpContext.Request.Path}{query.ToQueryString()}";
     }
 }

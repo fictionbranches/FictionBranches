@@ -1,15 +1,15 @@
 const rawMarkdownClass = "fbrawmarkdown";
 const parsedMarkdownClass = "fbparsedmarkdown";
 
-function parseMarkdownElement(element) {
+const parseMarkdownElement = element => {
 	element.innerHTML = markdownToHTML(element.innerHTML);
-	element.classList.remove(rawMarkdownClass);
 	element.classList.add(parsedMarkdownClass);
-}
+};
+const fixClassList = element => element.classList.remove(rawMarkdownClass);
 
 function parseMarkdownPage() {
-	var elements = document.getElementsByClassName(rawMarkdownClass);
-	Array.prototype.forEach.call(elements,parseMarkdownElement);
+	Array.prototype.forEach.call(document.getElementsByClassName(rawMarkdownClass),parseMarkdownElement);
+	Array.prototype.forEach.call(document.getElementsByClassName(parsedMarkdownClass),fixClassList);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

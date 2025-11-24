@@ -1,9 +1,10 @@
-@inject IHttpContextAccessor HttpContextAccessor
-
 <PageTitle>@message</PageTitle>
 <p>@message</p>
 
 @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     [Parameter]
     public string? Item { get; init; }
     private string message => $"404 Not Found{(string.IsNullOrWhiteSpace(Item) ? "" : $": {Item}")}";
@@ -11,7 +12,7 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
+        HttpContext.Response.StatusCode = 404;
     }
 
 }

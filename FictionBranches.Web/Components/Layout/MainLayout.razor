@@ -1,7 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
 @inject SignInManager<Fbuser> SignInManager
-@inject IHttpContextAccessor HttpContextAccessor
 @inject IdentityRedirectManager RedirectManager
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
 @inject UserManager<Fbuser> UserManager
@@ -9,7 +8,7 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container">
         <a href="/">
-            <img src="/fblogo.png" alt="Fiction Branches"/>
+            <img src="/images/fblogo.png" alt="Fiction Branches"/>
         </a>
         <!-- Mobile toggle button -->
         <button class="btn btn-outline-secondary btn-lg d-lg-none ms-auto"
@@ -27,6 +26,12 @@
     <div class="row g-2">
         <!-- Main content -->
         <main class="col-12 col-lg-8 order-2 order-lg-1">
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @ErrorMessage
+                </div>
+            }
             @Body
         </main>
 
@@ -47,22 +52,22 @@
             <div id="sidebar-content-desktop" class="d-none d-lg-block position-sticky" style="top: 1rem;">
                 <div>
                     <SidebarSection>
-                        @if (!HttpContextAccessor.HttpContext.User.IsLoggedIn())
+                        @if (!HttpContext.User.IsLoggedIn())
                         {
-                            <p><a class="btn btn-primary" href="/fb/account/login?ReturnURL=@HttpContextAccessor.HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-in-right" /> Log in</a></p>
+                            <p><a class="btn btn-primary" href="/fb/account/login?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-in-right" /> Log in</a></p>
                         }
                         else
                         {
-                            <p>Logged in as @HttpContextAccessor.HttpContext.User.AuthorName()</p>
-                            <p><a class="btn btn-primary" href="/fb/account/logout?ReturnURL=@HttpContextAccessor.HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-right" /> Log out</a></p>
+                            <p>Logged in as @HttpContext.User.AuthorName()</p>
+                            <p><a class="btn btn-primary" href="/fb/account/logout?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-right" /> Log out</a></p>
                                 
                             @if (FbConfig.CurrentValue.DevMode)
                             {
-                                @if (HttpContextAccessor.HttpContext.User.Level() >= 100)
+                                @if (HttpContext.User.IsAdmin())
                                 {
                                     <p>You are an Admin</p>
                                 }
-                                else if (HttpContextAccessor.HttpContext.User.Level() >= 10)
+                                else if (HttpContext.User.IsMod())
                                 {
                                     <p>You are a Moderator</p>
                                 }
@@ -93,3 +98,12 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    public string? ErrorMessage { get; init; }
+
+}

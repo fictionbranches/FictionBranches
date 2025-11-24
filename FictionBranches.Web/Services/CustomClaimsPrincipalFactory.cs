@@ -23,7 +23,7 @@ public class CustomClaimsPrincipalFactory : UserClaimsPrincipalFactory<Fbuser>
             var identity = (ClaimsIdentity)principal.Identity;
             identity.AddClaim(new Claim(Names.ClaimUsername, user.Id));
             identity.AddClaim(new Claim(Names.ClaimUserLevel, user.Level.ToString()));
-            identity.AddClaim(new Claim(Names.ClaimAuthorName, user.Author));
+            identity.AddClaim(new Claim(Names.ClaimAuthorName, user.Author!));
         }
         return principal;
     }
@@ -46,17 +46,20 @@ public static class ClaimsExtensions
         return principal.FindFirst(Names.ClaimUsername)?.Value;
     }
 
-    public static short Level(this ClaimsPrincipal principal)
+    private static short Level(this ClaimsPrincipal principal)
     {
         ArgumentNullException.ThrowIfNull(principal);
         var claim = principal.FindFirst(Names.ClaimUserLevel);
         return claim == null ? (short)0 : short.Parse(claim.Value);
     }
+
+    public static bool IsAdmin(this ClaimsPrincipal principal) => principal.Level() >= 100;
+    public static bool IsMod(this ClaimsPrincipal principal) => principal.Level() >= 10;
     
     public static string AuthorName(this ClaimsPrincipal principal)
     {
         ArgumentNullException.ThrowIfNull(principal);
         var claim = principal.FindFirst(Names.ClaimAuthorName);
-        return claim.Value;
+        return claim?.Value ?? "";
     }
 }

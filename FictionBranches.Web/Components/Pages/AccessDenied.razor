@@ -1,0 +1,16 @@
+﻿@page "/fb/AccessDenied"
+
+<PageTitle>Access denied</PageTitle>
+<p>Access denied</p>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        HttpContext.Response.StatusCode = 403;
+    }
+
+}

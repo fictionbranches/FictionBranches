@@ -1,0 +1,52 @@
+@if (Date != null)
+{
+    <span class="@Class"
+          title="@MouseoverDate"
+          data-unixtimemillis="@(new DateTimeOffset(Date.Value.ToUniversalTime()).ToUnixTimeMilliseconds())">
+        @FormattedDate
+    </span> 
+}
+else
+{
+    <span>since the beforefore times</span>
+}
+
+@code {
+    [Parameter] public required DateTime? Date { get; init; }
+    [Parameter] public DateDisplayType Type { get; init; } = DateDisplayType.Output;
+
+    private string FormattedDate
+    {
+        get
+        {
+            if (Date is null)
+                return "since the beforefore times";
+            return Type switch
+            {
+                DateDisplayType.Simple => Date.Value.ToString("yyyy-MM-dd"),
+                _ => Date.Value.ToString("yyyy-MM-dd HH:mm:ss"),
+            };
+        }
+    }
+
+    private string MouseoverDate => Date is null ? "" : Date.Value.ToString("yyyy-MM-dd HH:mm:ss");
+    
+    private string Class
+    {
+        get
+        {
+            if (Date is null)
+                return "";
+            return Type switch
+            {
+                DateDisplayType.Simple => "simple-timestamp",
+                _ => "output-timestamp",
+            };
+        }
+    }
+    
+    public enum DateDisplayType
+    {
+        Simple, Output
+    }
+}

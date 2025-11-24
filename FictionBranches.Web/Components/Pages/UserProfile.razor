@@ -1,15 +1,12 @@
 @page "/fb/user/{Id}"
 
-@inject IHttpContextAccessor HttpContextAccessor
-
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
 @inject RootEpisodeCache RootEpisodeCache
 
 @if (user is null)
 {
-    <PageTitle>404 Not Found: @Id</PageTitle>
-    <p>404 Not Found: @Id</p>
+    <NotFound Item="@Id" />
 }
 else
 {
@@ -108,14 +105,13 @@ else
 
         isFirstPage = page == 1;
 
-        var db = DbContextFactory.CreateDbContext();
+        using var db = DbContextFactory.CreateDbContext();
         
         user = db.Fbusers
-            .FirstOrDefault(e => e.Id == Id.ToLower());
+            .FirstOrDefault(e => e.Id.ToLower() == Id.ToLower());
 
         if (user is null)
         {
-            HttpContextAccessor.HttpContext!.Response.StatusCode = 404;
             return;
         }
 

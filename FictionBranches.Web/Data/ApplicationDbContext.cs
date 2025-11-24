@@ -116,7 +116,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbannouncements");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.AuthorId)
                 .HasMaxLength(255)
@@ -138,7 +138,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbannouncementviews");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.AnnouncementId).HasColumnName("announcement_id");
             entity.Property(e => e.ViewerId)
@@ -163,7 +163,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Token, "uk_2fq2h3p230ef6p1boflsarg64").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.Date)
@@ -181,7 +181,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.SubscriberId, e.SubscribedtoId }, "uka07ci6945k3kc3hf1qxb7pk7m").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Createddate).HasColumnName("createddate");
             entity.Property(e => e.SubscribedtoId)
@@ -207,7 +207,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbcomments");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Date)
                 .HasColumnType("timestamp without time zone")
@@ -249,7 +249,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.EpisodeGeneratedid, e.UserId }, "uk1fi8d6b10aqv1ax6mk14kplnf").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Date)
                 .HasColumnType("timestamp without time zone")
@@ -301,7 +301,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Oldmap, "uk_5kqds4rxwiq5qh15urpctlac2").IsUnique();
 
             entity.Property(e => e.Generatedid)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("generatedid");
             entity.Property(e => e.AuthorId)
                 .HasMaxLength(255)
@@ -366,7 +366,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.EpisodeGeneratedid, e.TagId }, "uk5095m2mxm9rkn4ksataksfr0").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.EpisodeGeneratedid).HasColumnName("episode_generatedid");
             entity.Property(e => e.TagId).HasColumnName("tag_id");
@@ -403,7 +403,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.EpisodeGeneratedid, e.UserId }, "ukbhxqnt6rnqbmssnsbo9490wou").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Date)
                 .HasColumnType("timestamp without time zone")
@@ -429,7 +429,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbfailedloginattempts");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Ip)
                 .HasMaxLength(255)
@@ -446,7 +446,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.EpisodeGeneratedid, e.UserId }, "ukkj448x377yghlrgiqyq5kjyr8").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Date)
                 .HasColumnType("timestamp without time zone")
@@ -472,7 +472,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbflaggedcomments");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.CommentId).HasColumnName("comment_id");
             entity.Property(e => e.Date)
@@ -499,7 +499,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbflaggedepisodes");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Date)
                 .HasColumnType("timestamp without time zone")
@@ -539,7 +539,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbmodepisodes");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Body).HasColumnName("body");
             entity.Property(e => e.Date)
@@ -565,7 +565,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbnotifications");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Approved).HasColumnName("approved");
             entity.Property(e => e.Body).HasColumnName("body");
@@ -656,7 +656,7 @@ public partial class ApplicationDbContext : DbContext
             entity.ToTable("fbrecentuserblocks");
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.BlockeduserId)
                 .HasMaxLength(255)
@@ -698,7 +698,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.Shortname, "uk_crm05y4qlhyhltl6n83qneeeu").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.CreatedbyId)
                 .HasMaxLength(255)
@@ -748,7 +748,7 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.EpisodeGeneratedid, e.UserId }, "uk3usmmoftdasoxog2jp7o3mipd").IsUnique();
 
             entity.Property(e => e.Id)
-                .ValueGeneratedNever()
+                .HasDefaultValueSql(@"nextval('hibernate_sequence')")
                 .HasColumnName("id");
             entity.Property(e => e.Date)
                 .HasColumnType("timestamp without time zone")

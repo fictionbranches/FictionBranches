@@ -1,6 +1,5 @@
 @page "/fb/story/{GeneratedId:long}"
 
-@inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavMan
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
@@ -14,10 +13,10 @@ else
     <h1>@episode.Title</h1>
     
     <p>
-        <a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a> on @episode.Date
+        <a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a> on <DateDisplay Date="episode.Date" />
         @if (episode.Editor is not null)
         {
-            <br/><text>Episode last modified by <a href="/fb/user/@episode.Editor.Id">@episode.Editor.Author</a> on @episode.Editdate</text>
+            <br/><text>Episode last modified by <a href="/fb/user/@episode.Editor.Id">@episode.Editor.Author</a> on <DateDisplay Date="episode.Editdate" /></text>
         }
     </p>
     
@@ -33,9 +32,24 @@ else
     
     <p>
         <a href="@(episode.ParentGeneratedid != null ? $"/fb/story/{episode.ParentGeneratedid}" : "/fb")">Return to Parent Episode</a><br/>
-        <a href="@($"{HttpContextAccessor?.HttpContext?.GetPathWithQuery()}#children")">Jump to child episodes</a><br/>
-        <a href="@($"{HttpContextAccessor?.HttpContext?.GetPathWithQuery()}#comments")">Jump to comments</a><br/>
+        <a href="@($"{HttpContext.GetPathWithQuery()}#children")">Jump to child episodes</a><br/>
+        <a href="@($"{HttpContext.GetPathWithQuery()}#comments")">Jump to comments</a><br/>
     </p>
+    
+    <AuthorizeView>
+        <Authorized>
+            <p>
+                @if (HttpContext.User.Username().Equals(episode.AuthorId))
+                {
+                    <a href="@($"/fb/modify/{episode.Generatedid}")">Modify your episode</a>
+                }
+                else if (HttpContext.User.IsMod())
+                {
+                    <a href="@($"/fb/modify/{episode.Generatedid}")">Modify as moderator</a>
+                }
+            </p>
+        </Authorized>
+    </AuthorizeView>
     
     <hr/>
     
@@ -54,6 +68,11 @@ else
                 }
             </select>
         </form>
+        <AuthorizeView>
+            <Authorized>
+                <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
+            </Authorized>
+        </AuthorizeView>
         @foreach (var child in episode.InverseParentGenerated)
         {
             <p>
@@ -63,6 +82,15 @@ else
             </p>
         }
 
+        if (episode.InverseParentGenerated.Count() > 1)
+        {
+            <AuthorizeView>
+                <Authorized>
+                    <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
+                </Authorized>
+            </AuthorizeView>
+        }
+        
         <hr/>
     }
 
@@ -71,18 +99,21 @@ else
     {
         <CommentDisplay Comment="comment" ShowAuthor="true" />
     }
+    
+    <SectionContent SectionName="@Names.AdditionalSidebar">
+        <SidebarSection Title="Path">
+            @foreach (var ep in pathbox)
+            {
+                <p>@(ep.Newmap.Split('B').Length). <EpisodeLink Episode="ep" /></p>
+            }
+        </SidebarSection>
+    </SectionContent>
 }
 
-<SectionContent SectionName="@Names.AdditionalSidebar">
-    <SidebarSection Title="Path">
-        @foreach (var ep in pathbox)
-        {
-            <p>@(ep.Newmap.Split('B').Length). <EpisodeLink Episode="ep" /></p>
-        }
-    </SidebarSection>
-</SectionContent>
-
 @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     [Parameter]
     public long GeneratedId { get; init; }
 
@@ -106,18 +137,18 @@ else
     {
         base.OnInitialized();
 
-        var db = DbContextFactory.CreateDbContext();
+        using var db = DbContextFactory.CreateDbContext();
         
         // if Sort query-param is set, set cookie and redirect
         if (!string.IsNullOrWhiteSpace(Sort))
         {
             var childSort = ChildSortHelper.GetFromShortName(Sort);
-            HttpContextAccessor.HttpContext!.Response.Cookies.Append(SortCookieName, childSort.GetDisplayShortName());
+            HttpContext.Response.Cookies.Append(SortCookieName, childSort.GetDisplayShortName());
             NavMan.NavigateTo($"/fb/story/{GeneratedId}#children");
             return;
         }
         
-        var cookie = HttpContextAccessor.HttpContext!.Request.Cookies[SortCookieName];
+        var cookie = HttpContext.Request.Cookies[SortCookieName];
         if (!string.IsNullOrWhiteSpace(cookie))
             sortModel.ChildSort = ChildSortHelper.GetFromShortName(cookie);
 

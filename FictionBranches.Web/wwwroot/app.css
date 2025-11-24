@@ -99,3 +99,7 @@ a.fbtag-selected {
 .emphasizedComment {
     border: 5px solid; 
 }
+
+.text-align-center {
+    text-align: center;
+}

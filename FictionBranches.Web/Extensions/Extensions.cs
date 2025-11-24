@@ -45,10 +45,8 @@ public enum SortDirection
 
 public static class StringExtensions
 {
-    public static bool EqualsIgnoreCase(this string? a, string? b)
-    {
-        return a is null ? b is null : string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-    }
+    public static bool EqualsIgnoreCase(this string? a, string? b) =>
+        (a == null && b == null) || (a != null && b != null && a.ToLower().Equals(b.ToLower()));
 }
 
 public static class HttpContextExtensions
@@ -73,4 +71,9 @@ public static class HttpContextExtensions
         var valueString = value?.ToString();
         return string.IsNullOrWhiteSpace(valueString) ? escapedKey : $"{escapedKey}={Uri.EscapeDataString(valueString)}";
     }
+}
+
+public static class DateTimeExtensions
+{
+    public static DateTime UnspecifiedNow => new DateTime(DateTime.UtcNow.Ticks, DateTimeKind.Unspecified);
 }

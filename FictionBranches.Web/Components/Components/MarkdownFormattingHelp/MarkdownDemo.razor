@@ -1,0 +1,46 @@
+<div class="card mb-3">
+    <div class="card-body">
+        
+        <h4 class="card-title">@Title</h4>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <h6 class="card-subtitle mb-2 text-body-secondary">@Subtitle</h6>
+        }
+        <h6 class="mt-3">Input:</h6>
+        <div class="card mb-1">
+            <div class="card-body">
+                <code><pre>@ChildContent</pre></code>
+            </div>
+        </div>
+        <h6>Output:</h6>
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="fbrawmarkdown">
+                    @if (ActualContentToRender != null)
+                    {
+                        @ActualContentToRender
+                    }
+                    else
+                    {
+                        @ChildContent
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Title { get; init; }
+    
+    [Parameter]
+    public string? Subtitle { get; init; }
+    
+    [Parameter, EditorRequired]
+    public required RenderFragment? ChildContent { get; init; }
+    
+    [Parameter]
+    public RenderFragment? ActualContentToRender { get; init; }
+}

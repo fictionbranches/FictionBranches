@@ -1,0 +1,51 @@
+<h3>Formatting help</h3>
+<p>Episodes on Fiction Branches are formatted using Markdown.</p>
+<p>HTML tags will be escaped and presented as entered in the episode (and thus should <strong><em>not</em></strong> be used).</p>
+<p>Fiction Branches implements most basic features of Markdown (specifically the CommonMark specification). Some Markdown features (such as HTML blocks) may not be enabled.</p>
+
+<MarkdownDemo Title="Headers" Subtitle="You can create headers of varying levels."># Header 1
+## Header 2
+### Header 3
+#### Header 4
+##### Header 5
+###### Header 6</MarkdownDemo>
+<MarkdownDemo Title="More Headers" Subtitle="You can also make a header by underlining the text with hyphens.">This is a header
+-----</MarkdownDemo>
+<MarkdownDemo Title="Horizontal Rule" Subtitle="To insert a horizontal rule, use an empty line followed by a line of hyphens:">This is not a header
+
+-----
+
+A second line of text.
+
+-----
+
+A third line of text.</MarkdownDemo>
+<MarkdownDemo Title="Formatting">*This text is italicized.*
+
+**This text is bold.**
+
+***This text is bold and italicized.***
+
+~~This text is strikethrough~~.</MarkdownDemo>
+<MarkdownDemo Title="Centered text">-&gt;This text is centered&lt;-</MarkdownDemo>
+<MarkdownDemo Title="Link">[This is a link](https://google.com)</MarkdownDemo>
+<MarkdownDemo Title="Image">
+    <ChildContent>![alt text is optional](@SiteUrl/images/fblogo.png)</ChildContent>
+    <ActualContentToRender>![alt text is optional](/images/fblogo.png)</ActualContentToRender>
+</MarkdownDemo>
+<MarkdownDemo Title="Table">| Tables        | Are           | Cool  |
+| ------------- |:-------------:| -----:|
+| col 3 is      | right-aligned | $1600 |
+| col 2 is      | centered      |   $12 |
+| zebra stripes | are neat      |    $1 |
+
+Markdown | Less | Pretty
+--- | --- | ---
+*Still* | `renders` | **nicely**
+1 | 2 | 3</MarkdownDemo>
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private string SiteUrl => $"https://{HttpContext.Request.Host}{HttpContext.Request.PathBase}";
+}

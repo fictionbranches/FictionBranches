@@ -28,8 +28,15 @@ builder.Services.AddIdentity<Fbuser, IdentityRole>(options =>
     .AddDefaultTokenProviders()
     .AddSignInManager<CustomSignInManager<Fbuser>>()
     .AddClaimsPrincipalFactory<CustomClaimsPrincipalFactory>();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/fb/account/login";
+    options.LogoutPath = "/fb/account/logout";
+    options.AccessDeniedPath = "/fb/AccessDenied";
+});
 
-// builder.Services.AddScoped<IUserStore<Fbuser>, UserOnlyStore<Fbuser, ApplicationDbContext>>();
+builder.Services.AddAuthorization();
+
 builder.Services.AddScoped<IPasswordHasher<Fbuser>, BCryptPasswordHasher<Fbuser>>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 
