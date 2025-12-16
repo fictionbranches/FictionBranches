@@ -36,6 +36,14 @@ public static class LinqExtensions
         SortDirection.Descending => source.OrderByDescending(keySelector),
         _ => source.OrderBy(keySelector)
     };
+
+    public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
+    {
+        foreach (var item in collection)
+        {
+            action(item);
+        }
+    }
 }
 
 public enum SortDirection

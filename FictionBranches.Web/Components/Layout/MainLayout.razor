@@ -1,9 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
-@inject SignInManager<Fbuser> SignInManager
-@inject IdentityRedirectManager RedirectManager
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
-@inject UserManager<Fbuser> UserManager
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container">
@@ -60,7 +58,12 @@
                         {
                             <p>Logged in as @HttpContext.User.AuthorName()</p>
                             <p><a class="btn btn-primary" href="/fb/account/logout?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-right" /> Log out</a></p>
-                                
+                            
+                            @if (Announcements > 0)
+                            {
+                                <text>@Announcements new announcement@(Announcements > 1 ? "s" : "")</text> 
+                            }
+                            
                             @if (FbConfig.CurrentValue.DevMode)
                             {
                                 @if (HttpContext.User.IsAdmin())
@@ -106,4 +109,22 @@
     [SupplyParameterFromQuery]
     public string? ErrorMessage { get; init; }
 
+    private int Announcements = 0;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (HttpContext.User.IsLoggedIn())
+        {
+            using var db = DbContextFactory.CreateDbContext();
+            
+            Announcements = db.Fbannouncements
+                .Count(e => !db.Fbannouncementviews
+                    .Where(av => av.ViewerId == HttpContext.User.Username())
+                    .Where(av => av.AnnouncementId == e.Id)
+                    .Select(av => av.AnnouncementId)
+                    .Contains(e.Id));
+
+        }
+    }
 }

@@ -13,10 +13,11 @@ else
     <h1>@episode.Title</h1>
     
     <p>
-        <a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a> on <DateDisplay Date="episode.Date" />
+        <UserLink User="episode.Author" /> on <DateDisplay Date="episode.Date"/>
         @if (episode.Editor is not null)
         {
-            <br/><text>Episode last modified by <a href="/fb/user/@episode.Editor.Id">@episode.Editor.Author</a> on <DateDisplay Date="episode.Editdate" /></text>
+            <br/>
+            <text>Episode last modified by <UserLink User="episode.Editor"/> on <DateDisplay Date="episode.Editdate"/></text>
         }
     </p>
     
@@ -57,7 +58,7 @@ else
     
     <hr/>
     
-    <a id="children"></a>
+    <a id="children" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
     @if (episode.InverseParentGenerated.Count > 0)
     {
         <form method="GET">
@@ -94,7 +95,8 @@ else
         <hr/>
     }
 
-    <a id="comments"></a>
+    <a id="comments" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
+    
     @foreach (var comment in episode.Fbcomments)
     {
         <CommentDisplay Comment="comment" ShowAuthor="true" />

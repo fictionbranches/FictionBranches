@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FictionBranches.Web.Data.Models;
 
@@ -16,4 +17,6 @@ public partial class Fbannouncement
     public virtual Fbuser? Author { get; set; }
 
     public virtual ICollection<Fbannouncementview> Fbannouncementviews { get; set; } = new List<Fbannouncementview>();
+
+    [NotMapped] public bool Read = false;
 }

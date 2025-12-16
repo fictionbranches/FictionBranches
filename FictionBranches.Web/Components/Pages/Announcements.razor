@@ -1,0 +1,84 @@
+@page "/fb/announcements"
+
+@inject NavigationManager NavMan
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+
+<h3>Announcements</h3>
+
+@foreach (var ann in _announcements)
+{
+    <div class="alert alert-dark">
+        <div class="fbrawmarkdown">@ann.Body</div>
+        <hr />
+        <p>
+            - <UserLink User="ann.Author"/> (<DateDisplay Date="ann.Date" Type="DateDisplay.DateDisplayType.Simple"/>)
+            @if (!ann.Read)
+            {
+                <a class="btn btn-primary float-end" href="/fb/announcements?read=@ann.Id">Mark read</a>
+            }
+        </p>
+    </div>
+}
+
+@code {
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    public string? Read { get; init; }
+
+    private List<Fbannouncement> _announcements = [];
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        using var db = DbContextFactory.CreateDbContext();
+
+        // if Sort query-param is set, set cookie and redirect
+        if (!string.IsNullOrWhiteSpace(Read))
+        {
+            if (HttpContext.User.IsLoggedIn())
+            {
+                if (long.TryParse(Read, out var announcementId))
+                {
+                    db.Fbannouncementviews.Add(new Fbannouncementview
+                    {
+                        AnnouncementId = announcementId,
+                        ViewerId = HttpContext.User.Username()
+                    });
+                    db.SaveChanges();
+                }
+            }
+            NavMan.NavigateTo($"/fb/announcements");
+            return;
+        }
+
+        
+        var dict = db.Fbannouncements
+            .OrderByDescending(e => e.Date)
+            .Include(e => e.Author)
+            .ToDictionary(e => e.Id, e => e);
+
+        if (HttpContext.User.IsLoggedIn())
+        {
+            foreach (var readId in db.Fbannouncementviews
+                         .Where(e => e.ViewerId == HttpContext.User.Username())
+                         .Select(e => e.AnnouncementId)
+                         .ToList())
+            {
+                dict[readId!.Value].Read = true;
+            }
+            
+        }
+        else
+        {
+            dict.Values.ForEach(e => e.Read = true);
+        }
+
+        _announcements = dict.Values.ToList();
+
+    }
+
+}

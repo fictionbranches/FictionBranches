@@ -1,0 +1,8 @@
+@if (User != null)
+{
+    <a href="@($"/fb/user/{User.Id}")">@User.Author</a>
+}
+@code {
+    [Parameter, EditorRequired]
+    public Fbuser? User { get; init; }
+}

@@ -50,8 +50,8 @@ else
             {
                 <tr>
                     <td><EpisodeLink Episode="episode" ShowTitleIfDifferent="true"></EpisodeLink></td>
-                    <td><a href="/fb/user/@episode.Author!.Id">@episode.Author.Author</a></td>
-                    <td><DateDisplay Date="episode.Date" /></td>
+                    <td><UserLink User="episode.Author" /></td>
+                    <td><DateDisplay Date="episode.Date" Type="DateDisplay.DateDisplayType.Simple" /></td>
                     @if (root == null)
                     {
                         <td><a href="@($"/fb/story/{RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)?.Generatedid}")">@RootEpisodeCache.GetEpisodeFromNewMap(episode.Newmap)?.Link</a></td>
