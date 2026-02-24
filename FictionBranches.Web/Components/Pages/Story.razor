@@ -23,8 +23,8 @@ else
     
     <p>
         @episode.Viewcount hits, 
-        @episode.Fbepisodeviews.Count() views,
-        @episode.Fbupvotes.Count() upvotes.
+        @views views,
+        @upvotes upvotes.
     </p>
     
     <p>
@@ -37,20 +37,27 @@ else
         <a href="@($"{HttpContext.GetPathWithQuery()}#comments")">Jump to comments</a><br/>
     </p>
     
-    <AuthorizeView>
-        <Authorized>
-            <p>
-                @if (HttpContext.User.Username().Equals(episode.AuthorId))
-                {
-                    <a href="@($"/fb/modify/{episode.Generatedid}")">Modify your episode</a>
-                }
-                else if (HttpContext.User.IsMod())
-                {
-                    <a href="@($"/fb/modify/{episode.Generatedid}")">Modify as moderator</a>
-                }
-            </p>
-        </Authorized>
-    </AuthorizeView>
+    @if (HttpContext.User.IsLoggedIn())
+    {
+        @if (HttpContext.User.Username().Equals(episode.AuthorId))
+        {
+            <p><a href="@($"/fb/modify/{GeneratedId}")">Modify your episode</a></p>
+        }
+        else if (HttpContext.User.IsMod())
+        {
+            <p><a href="@($"/fb/modify/{GeneratedId}")">Modify as moderator</a></p>
+        }
+        <a href="@($"{HttpContext.Request.Path}?vote={(hasUpvoted ? "false" : "true")}")" class="btn btn-primary">
+            @if (hasUpvoted)
+            {
+                <i class="bi bi-ban"></i><text> Undo upvote</text>
+            }
+            else
+            {
+                <i class="bi bi-hand-thumbs-up"></i><text> Upvote this episode</text>
+            }
+        </a>
+    }
     
     <hr/>
     
@@ -69,11 +76,10 @@ else
                 }
             </select>
         </form>
-        <AuthorizeView>
-            <Authorized>
-                <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
-            </Authorized>
-        </AuthorizeView>
+        @if (HttpContext.User.IsLoggedIn())
+        {
+            <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
+        }
         @foreach (var child in episode.InverseParentGenerated)
         {
             <p>
@@ -85,11 +91,10 @@ else
 
         if (episode.InverseParentGenerated.Count() > 1)
         {
-            <AuthorizeView>
-                <Authorized>
-                    <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
-                </Authorized>
-            </AuthorizeView>
+            @if (HttpContext.User.IsLoggedIn())
+            {
+                <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
+            }
         }
         
         <hr/>
@@ -121,7 +126,10 @@ else
 
     [SupplyParameterFromQuery]
     public string? Sort { get; init; }
-    
+
+    [SupplyParameterFromQuery]
+    public string? Vote { get; init; }
+
     private class ChildSortModel
     {
         [Required] public ChildSort ChildSort { get; set; } = ChildSort.OldestFirst;
@@ -132,6 +140,10 @@ else
     private Fbepisode? episode;
 
     private List<Fbepisode?> pathbox;
+
+    private bool hasUpvoted = false;
+
+    private int views, upvotes;
     
     private const string SortCookieName = "fbchildsort";
     
@@ -141,12 +153,29 @@ else
 
         using var db = DbContextFactory.CreateDbContext();
         
-        // if Sort query-param is set, set cookie and redirect
+        // if Sort query-param is set, set cookie and reload
         if (!string.IsNullOrWhiteSpace(Sort))
         {
             var childSort = ChildSortHelper.GetFromShortName(Sort);
             HttpContext.Response.Cookies.Append(SortCookieName, childSort.GetDisplayShortName());
             NavMan.NavigateTo($"/fb/story/{GeneratedId}#children");
+            return;
+        }
+        
+        // if Vote query-param is set, handle vote and reload
+        if (!string.IsNullOrWhiteSpace(Vote))
+        {
+            if (Vote.ToLower().StartsWith("true")) // add upvote
+                db.Fbupvotes.Add(new Fbupvote
+                {
+                    UserId = HttpContext.User.Username(),
+                    EpisodeGeneratedid = GeneratedId,
+                    Date = DateTime.Now,
+                });
+            else
+                db.Fbupvotes.Where(e => e.EpisodeGeneratedid == GeneratedId && e.UserId == HttpContext.User.Username()).ExecuteDelete();
+            db.SaveChanges();
+            NavMan.NavigateTo(HttpContext.Request.Path);
             return;
         }
         
@@ -166,18 +195,19 @@ else
         episode = db.Fbepisodes
             .Include(e => e.Author)
             .Include(e => e.Editor)
-            .Include(e => e.Fbcomments)
+            .Include(e => e.Fbcomments.OrderBy(e2 => e2.Date))
                 .ThenInclude(e => e.User)
             .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag)
-            .Include(e => e.Fbepisodeviews)
-            .Include(e => e.Fbupvotes)
             .AsSplitQuery()
             .FirstOrDefault(e => e.Generatedid == GeneratedId);
 
         if (episode is null)
             return; // 404
 
+        views = db.Fbepisodeviews.Count(e => e.EpisodeGeneratedid == GeneratedId); 
+        upvotes = db.Fbupvotes.Count(e => e.EpisodeGeneratedid == GeneratedId);
+        
         episode.InverseParentGenerated = orderBy(db.Fbepisodes
             .Where(e => e.ParentGeneratedid == GeneratedId))
             .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
@@ -189,5 +219,22 @@ else
             path.RemoveRange(0, path.Count - 20);
 
         pathbox = db.Fbepisodes.Where(e => path.Contains(e.Generatedid)).OrderByDescending(e => e.Generatedid).ToList();
+        
+        if (HttpContext.User.IsLoggedIn())
+        {
+            hasUpvoted = db.Fbupvotes.Any(e => e.EpisodeGeneratedid == GeneratedId && e.UserId == HttpContext.User.Username());
+            if (!db.Fbepisodeviews.Any(e => e.EpisodeGeneratedid == GeneratedId && e.UserId == HttpContext.User.Username()))
+            {
+                db.Fbepisodeviews.Add(new Fbepisodeview
+                {
+                    UserId = HttpContext.User.Username(),
+                    EpisodeGeneratedid = GeneratedId,
+                    Date = DateTime.Now,
+                });
+                ++views;
+            }
+        }
+        episode.Viewcount += 1;
+        db.SaveChanges();
     }
 }

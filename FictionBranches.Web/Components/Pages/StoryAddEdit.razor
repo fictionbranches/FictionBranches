@@ -1,100 +1,94 @@
 @page "/fb/add/{ParentGeneratedId:long}"
 @page "/fb/modify/{GeneratedId:long}"
 @page "/fb/addnewroot"
+@using Microsoft.AspNetCore.Authorization
 
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 @inject NavigationManager NavMan
 
-<AuthorizeView>
-    <NotAuthorized>
-        <PageTitle>You must be logged in to do that.</PageTitle>
-        You must be logged in to do that.
-    </NotAuthorized>
-    <Authorized Context="authContext">
+@attribute [Authorize]
 
-        @if (notFound)
-        {
-            <NotFound Item="@((ParentGeneratedId ?? GeneratedId).ToString())"/>
-        }
-        else if (notAllowed)
-        {
-            <p>You are not allowed to do that.</p>
-        }
-        else
-        {
-            @if (ParentGeneratedId != null)
+@if (notFound)
+{
+    <NotFound Item="@((ParentGeneratedId ?? GeneratedId).ToString())"/>
+}
+else if (notAllowed)
+{
+    <p>You are not allowed to do that.</p>
+}
+else
+{
+    @if (ParentGeneratedId != null)
+    {
+        <h3>Add to '@Episode!.ParentGenerated!.Link'</h3>
+    }
+    else if (GeneratedId != null)
+    {
+        <h3>Modifying '@Episode!.Link'</h3>
+    }
+    else
+    {
+        <h3>Add new root episode</h3>
+    }
+    
+    <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmit" FormName="StoryAddEditForm">
+        
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        
+        <ValidatingInputText @bind-Value="Input.Title" id="Input.Title" Label="Title"
+                             type="text" placeholder="And So It Begins..." ClassList="mb-3"/>
+        
+        <div id="buttonToggleGroup" class="mb-3">
+            <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#formattingHelp" role="button"
+                    aria-expanded="false" aria-controls="formattingHelp">
+                Formatting help
+            </button>
+            @if (Episode?.ParentGenerated != null)
             {
-                <h3>Add to '@Episode!.ParentGenerated!.Link'</h3>
+                <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previousEpisodeBody"
+                        role="button"
+                        aria-expanded="false" aria-controls="previousEpisodeBody">
+                    Previous episode
+                </button>
             }
-            else if (GeneratedId != null)
+            <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previewMarkdown" role="button"
+                    aria-expanded="false" aria-controls="previewMarkdown">
+                Preview markdown
+            </button>
+            <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="formattingHelp">
+                <div class="card card-body">
+                    <MarkdownFormattingHelp/>
+                </div>
+            </div>
+            @if (Episode?.ParentGenerated != null)
             {
-                <h3>Modifying '@Episode!.Link'</h3>
-            }
-            else
-            {
-                <h3>Add new root episode</h3>
-            }
-            
-            <EditForm Model="Input" method="post" OnValidSubmit="OnValidSubmit" FormName="StoryAddEditForm">
-                
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-                
-                <ValidatingInputText @bind-Value="Input.Title" id="Input.Title" Label="Title"
-                                     type="text" placeholder="And So It Begins..." ClassList="mb-3"/>
-                
-                <div id="buttonToggleGroup" class="mb-3">
-                    <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#formattingHelp" role="button"
-                            aria-expanded="false" aria-controls="formattingHelp">
-                        Formatting help
-                    </button>
-                    @if (Episode?.ParentGenerated != null)
-                    {
-                        <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previousEpisodeBody"
-                                role="button"
-                                aria-expanded="false" aria-controls="previousEpisodeBody">
-                            Previous episode
-                        </button>
-                    }
-                    <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previewMarkdown" role="button"
-                            aria-expanded="false" aria-controls="previewMarkdown">
-                        Preview markdown
-                    </button>
-                    <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="formattingHelp">
-                        <div class="card card-body">
-                            <MarkdownFormattingHelp/>
-                        </div>
-                    </div>
-                    @if (Episode?.ParentGenerated != null)
-                    {
-                        <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previousEpisodeBody">
-                            <div class="card card-body">
-                                <EpisodeLink Episode="Episode.ParentGenerated"/>
-                                <h5>@Episode.ParentGenerated.Title</h5>
-                                <div class="fbepisodebody fbrawmarkdown">@Episode.ParentGenerated.Body</div>
-                            </div>
-                        </div>
-                    }
-                    <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previewMarkdown">
-                        <div class="card card-body" id="previewDiv"></div>
+                <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previousEpisodeBody">
+                    <div class="card card-body">
+                        <EpisodeLink Episode="Episode.ParentGenerated"/>
+                        <h5>@Episode.ParentGenerated.Title</h5>
+                        <div class="fbepisodebody fbrawmarkdown">@Episode.ParentGenerated.Body</div>
                     </div>
                 </div>
+            }
+            <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previewMarkdown">
+                <div class="card card-body" id="previewDiv"></div>
+            </div>
+        </div>
 
-                <ValidatingInputText @bind-Value="Input.Body" id="Input.Body" Label="Body"
-                                     IsTextArea="true" rows="20" ClassList="mb-3"
-                                     placeholder="I sat on the wall after class, nervously fingering the box and swinging my legs. It was the first day of school..."/>
-                
-                <ValidatingInputText @bind-Value="Input.Link" Label="Link"
-                                     type="text" placeholder="You Are What You Wish" ClassList="mb-3"/>
-                
-                <InputNumber type="hidden" Value="@Input.Generatedid" ValueExpression="()=>Input.Generatedid" />
-                <InputNumber type="hidden" Value="@Input.ParentGeneratedid" ValueExpression="()=>Input.ParentGeneratedid" />
-                
-                <button type="submit" class="btn btn-primary">@submitButtonText</button>
-            </EditForm>
-        }
-    </Authorized>
-</AuthorizeView>
+        <ValidatingInputText @bind-Value="Input.Body" id="Input.Body" Label="Body"
+                             IsTextArea="true" rows="20" ClassList="mb-3"
+                             placeholder="I sat on the wall after class, nervously fingering the box and swinging my legs. It was the first day of school..."/>
+        
+        <ValidatingInputText @bind-Value="Input.Link" Label="Link"
+                             type="text" placeholder="You Are What You Wish" ClassList="mb-3"/>
+        
+        <InputNumber type="hidden" Value="@Input.Generatedid" ValueExpression="()=>Input.Generatedid" />
+        <InputNumber type="hidden" Value="@Input.ParentGeneratedid" ValueExpression="()=>Input.ParentGeneratedid" />
+        
+        <button type="submit" class="btn btn-primary">@submitButtonText</button>
+    </EditForm>
+}
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
