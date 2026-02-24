@@ -14,13 +14,10 @@ public class CustomClaimsPrincipalFactory : UserClaimsPrincipalFactory<Fbuser>
     public override async Task<ClaimsPrincipal> CreateAsync(Fbuser user)
     {
         if (user == null)
-        {
-            throw new ArgumentNullException("user");
-        }
+            throw new ArgumentNullException(nameof(user));
         var principal = await base.CreateAsync(user);
-        if (principal.Identity is ClaimsIdentity)
+        if (principal.Identity is ClaimsIdentity identity)
         {
-            var identity = (ClaimsIdentity)principal.Identity;
             identity.AddClaim(new Claim(Names.ClaimUsername, user.Id));
             identity.AddClaim(new Claim(Names.ClaimUserLevel, user.Level.ToString()));
             identity.AddClaim(new Claim(Names.ClaimAuthorName, user.Author!));
@@ -32,19 +29,21 @@ public class CustomClaimsPrincipalFactory : UserClaimsPrincipalFactory<Fbuser>
 
 public static class ClaimsExtensions
 {
-    public static bool IsLoggedIn(this ClaimsPrincipal principal)
+    public static bool IsLoggedIn(this ClaimsPrincipal? principal)
     {
-        var username = Username(principal);
-        if (username == null)
+        if (principal == null)
             return false;
-        return !string.IsNullOrWhiteSpace(username);
+        try
+        {
+            return !string.IsNullOrWhiteSpace(Username(principal));
+        }
+        catch
+        {
+            return false;
+        }
     }
 
-    public static string? Username(this ClaimsPrincipal principal)
-    {
-        ArgumentNullException.ThrowIfNull(principal);
-        return principal.FindFirst(Names.ClaimUsername)?.Value;
-    }
+    public static string Username(this ClaimsPrincipal principal) => SafeClaim(principal, Names.ClaimUsername);
 
     private static short Level(this ClaimsPrincipal principal)
     {
@@ -53,13 +52,15 @@ public static class ClaimsExtensions
         return claim == null ? (short)0 : short.Parse(claim.Value);
     }
 
+    private static string SafeClaim(ClaimsPrincipal principal, string  claimName)
+    {
+        var claimValue = principal?.FindFirst(claimName)?.Value;
+        ArgumentNullException.ThrowIfNull(claimValue);
+        return claimValue;
+    }
+
     public static bool IsAdmin(this ClaimsPrincipal principal) => principal.Level() >= 100;
     public static bool IsMod(this ClaimsPrincipal principal) => principal.Level() >= 10;
     
-    public static string AuthorName(this ClaimsPrincipal principal)
-    {
-        ArgumentNullException.ThrowIfNull(principal);
-        var claim = principal.FindFirst(Names.ClaimAuthorName);
-        return claim?.Value ?? "";
-    }
+    public static string AuthorName(this ClaimsPrincipal principal) => SafeClaim(principal, Names.ClaimAuthorName);
 }
