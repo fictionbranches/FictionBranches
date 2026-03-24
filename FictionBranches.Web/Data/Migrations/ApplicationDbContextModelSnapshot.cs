@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NpgsqlTypes;
 
 #nullable disable
 
@@ -17,7 +18,7 @@ namespace FictionBranches.Web.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -322,6 +323,14 @@ namespace FictionBranches.Web.Data.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("parent_generatedid");
 
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasColumnName("searchvector")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "english")
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Newmap", "Title", "Link", "Body" });
+
                     b.Property<DateTime?>("Tagdate")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("tagdate");
@@ -348,6 +357,11 @@ namespace FictionBranches.Web.Data.Migrations
 
                     b.HasIndex("ParentGeneratedid")
                         .HasDatabaseName("ix_fbepisodes_parentgeneratedid");
+
+                    b.HasIndex("SearchVector")
+                        .HasDatabaseName("ix_fbepisodes_searchvector");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.HasIndex(new[] { "Date" }, "ep_date_index")
                         .HasDatabaseName("ix_fbepisodes_date");

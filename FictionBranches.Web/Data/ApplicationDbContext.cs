@@ -347,6 +347,14 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.ParentGenerated).WithMany(p => p.InverseParentGenerated)
                 .HasForeignKey(d => d.ParentGeneratedid)
                 .HasConstraintName("fk9g5au8ye310xeaa88f23in3vv");
+
+            entity.HasGeneratedTsVectorColumn(
+                    p => p.SearchVector,
+                    "english",
+                    p => new { p.Newmap, p.Title, p.Link, p.Body })
+                .HasIndex(p => p.SearchVector)
+                .HasMethod("GIN");
+
         });
 
         modelBuilder.Entity<Fbepisodetag>(entity =>

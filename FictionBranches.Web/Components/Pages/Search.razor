@@ -1,0 +1,160 @@
+@page "/fb/search/{GeneratedId:long}"
+
+@inject IOptionsMonitor<FictionBranchesOptions> FbConfig
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject NavigationManager NavMan
+
+@attribute [Authorize]
+
+@if (notFound)
+{
+    <NotFound Item="@(GeneratedId.ToString())"/>
+}
+else
+{
+    <h3>Searching @Episode.Title</h3>
+    
+    <form method="get">
+        <input class="form-control my-3" type="text" name="q" value="@Q" />
+        <div>
+            <span>Sort order: </span> 
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" id="sortDefault" name="sort" value="default" checked="@(Sort != "newest" && Sort != "oldest")" />
+                <label class="form-check-label" for="sortDefault">Default</label>
+            </div>
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" id="sortNewest" name="sort" value="newest" checked="@(Sort == "newest")" />
+                <label class="form-check-label" for="sortNewest">Newest</label>
+            </div>
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" id="sortOldest" name="sort" value="oldest" checked="@(Sort == "oldest")" />
+                <label class="form-check-label" for="sortOldest">Oldest</label>
+            </div>
+        </div>
+        <div>
+            <span>Tags: </span>
+            @foreach (var tag in AllTags)
+            {
+                <div class="form-check-inline border my-1 px-1">
+                    <input class="form-check-input" type="checkbox" name="@tag" value="" id="checkbox-@tag" checked="@SelectedTags.Contains(tag)" />
+                    <label class="form-check-label" for="checkbox-@tag">@tag</label>
+                </div>
+            }
+        </div>
+        <br/>
+        <button class="btn btn-primary my-3" type="submit"><i class="bi bi-search"></i>Search</button>
+    </form>
+    
+    @if (Results is not null)
+    {
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Episode</th>
+                <th scope="col">Tags</th>
+                <th scope="col">Author</th>
+                <th scope="col">Date</th>
+                <th scope="col">Depth</th>
+            </tr>
+            </thead>
+            <tbody>
+                @foreach (var ep in Results)
+                {
+                    <tr>
+                        <td><EpisodeLink Episode="ep"/></td>
+                        <td>
+                            @foreach (var tag in ep.Fbepisodetags)
+                            {
+                                <TagDisplay Tag="@tag.Tag" />
+                            }
+                        </td>
+                        <td><UserLink User="ep.Author" /></td>
+                        <td><DateDisplay Date="ep.Date" Type="DateDisplay.DateDisplayType.Simple" /></td>
+                        <td>@ep.Newmap.Where(c => c == 'A' || c == 'B').Count()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <ul>
+            @foreach (var episode in Results)
+            {
+                <li><EpisodeLink Episode="episode" /></li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [Parameter] public long? GeneratedId { get; init; }
+    
+    [SupplyParameterFromQuery] public string? Q { get; set; }
+    [SupplyParameterFromQuery] public string? Sort { get; set; }
+    [SupplyParameterFromQuery] public string? Page { get; set; }
+    
+    private Fbepisode? Episode;
+    private List<Fbepisode>? Results;
+    private HashSet<string> AllTags = [];
+    private HashSet<string> SelectedTags = [];
+    
+    private bool notFound = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+
+        Episode = db.Fbepisodes
+            .Where(e => e.Generatedid == GeneratedId)
+            .Include(e => e.ParentGenerated)
+            .FirstOrDefault();
+        if (Episode == null)
+        {
+            notFound = true;
+            return;
+        }
+
+        AllTags = (await db.Fbtags.OrderBy(e => e.Shortname).Select(e => e.Shortname).ToListAsync()).ToHashSet();
+        SelectedTags = HttpContext.Request.Query.Keys.Where(e => AllTags.Contains(e)).ToHashSet();
+        
+        if (!string.IsNullOrWhiteSpace(Q))
+        {
+
+            var pageNumber = int.TryParse(Page, out var p) ? p - 1 : 0;
+
+            IQueryable<Fbepisode> query = db.Fbepisodes;
+            
+            query = query
+                .Where(e => e.Newmap.StartsWith(Episode.Newmap))
+                .Where(e => e.SearchVector.Matches(Q))
+                .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
+                .ThenInclude(e => e.Tag);
+
+            if (SelectedTags.Count > 0)
+            {
+                query = query.Where(e => e.Fbepisodetags.Any() && SelectedTags.All(tag => e.Fbepisodetags.Select(e => e.Tag.Shortname).Contains(tag)));
+            }
+            
+            query = query.Include(e => e.Author);
+
+            query = Sort switch
+            {
+                "newest" => query.OrderByDescending(e => e.Date),
+                "oldest" => query.OrderBy(e => e.Date),
+                _ => query
+            };
+            
+            Results = await query
+                .Skip(FbConfig.CurrentValue.PageSize * pageNumber)
+                .Take(FbConfig.CurrentValue.PageSize)
+                .ToListAsync();
+        }
+        else
+        {
+            Q = "";
+        }
+    }
+}
