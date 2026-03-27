@@ -48,6 +48,9 @@ else
     
     @if (Results is not null)
     {
+        
+        <PrevNextSelector CurrentPage="PageNum" TotalPages="TotalPages" GetLinkToPage="GetLinkToPage" />
+        
         <table class="table">
             <thead>
             <tr>
@@ -93,6 +96,9 @@ else
     private List<Fbepisode>? Results;
     private HashSet<string> AllTags = [];
     private HashSet<string> SelectedTags = [];
+
+    private int PageNum => int.TryParse(Page, out var p) ? int.Max(p, 1) : 1;
+    private int TotalPages = 0;
     
     protected override async Task OnInitializedAsync()
     {
@@ -114,10 +120,8 @@ else
         
         if (!string.IsNullOrWhiteSpace(Q))
         {
-
-            var pageNumber = int.TryParse(Page, out var p) ? p - 1 : 0;
-
             IQueryable<Fbepisode> query = db.Fbepisodes;
+            IQueryable<Fbepisode> totalQuery = db.Fbepisodes;
             
             query = query
                 .Where(e => e.Newmap.StartsWith(Episode.Newmap))
@@ -125,9 +129,18 @@ else
                 .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag);
 
+            totalQuery = totalQuery
+                .Where(e => e.Newmap.StartsWith(Episode.Newmap))
+                .Where(e => e.SearchVector.Matches(Q));
+
+
             if (SelectedTags.Count > 0)
             {
                 query = query.Where(e => e.Fbepisodetags.Any() && SelectedTags.All(tag => e.Fbepisodetags.Select(e => e.Tag.Shortname).Contains(tag)));
+                totalQuery = totalQuery
+                    .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
+                    .ThenInclude(e => e.Tag)
+                    .Where(e => e.Fbepisodetags.Any() && SelectedTags.All(tag => e.Fbepisodetags.Select(e => e.Tag.Shortname).Contains(tag)));
             }
             
             query = query.Include(e => e.Author);
@@ -138,9 +151,11 @@ else
                 "oldest" => query.OrderBy(e => e.Date),
                 _ => query
             };
+
+            TotalPages = (int)Math.Ceiling(((double)await totalQuery.CountAsync()) / FbConfig.CurrentValue.PageSize);
             
             Results = await query
-                .Skip(FbConfig.CurrentValue.PageSize * pageNumber)
+                .Skip(FbConfig.CurrentValue.PageSize * (PageNum-1))
                 .Take(FbConfig.CurrentValue.PageSize)
                 .ToListAsync();
         }
@@ -148,5 +163,18 @@ else
         {
             Q = "";
         }
+    }
+
+    private string GetLinkToPage(int page)
+    {
+        Dictionary<string, object?> query = [];
+        query.Add("q", Q);
+        if (page > 1)
+            query.Add("page", page);
+        if (!string.IsNullOrWhiteSpace(Sort))
+            query.Add("sort", Sort);
+        foreach (var tag in SelectedTags)
+            query.Add(tag, "");
+        return $"{HttpContext.Request.Path}{query.ToQueryString()}";
     }
 }
