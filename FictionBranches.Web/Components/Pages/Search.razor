@@ -122,25 +122,24 @@ else
         {
             IQueryable<Fbepisode> query = db.Fbepisodes;
             IQueryable<Fbepisode> totalQuery = db.Fbepisodes;
-            
-            query = query
-                .Where(e => e.Newmap.StartsWith(Episode.Newmap))
-                .Where(e => e.SearchVector.Matches(Q))
-                .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
-                .ThenInclude(e => e.Tag);
 
-            totalQuery = totalQuery
+            Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> whereClause = query => query
                 .Where(e => e.Newmap.StartsWith(Episode.Newmap))
                 .Where(e => e.SearchVector.Matches(Q));
 
+            Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> includeClause = query => query
+                .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
+                .ThenInclude(e => e.Tag);
+            
+            query = includeClause(whereClause(query));
+            totalQuery = whereClause(totalQuery);
 
             if (SelectedTags.Count > 0)
             {
-                query = query.Where(e => e.Fbepisodetags.Any() && SelectedTags.All(tag => e.Fbepisodetags.Select(e => e.Tag.Shortname).Contains(tag)));
-                totalQuery = totalQuery
-                    .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
-                    .ThenInclude(e => e.Tag)
+                Func<IQueryable<Fbepisode>, IQueryable<Fbepisode>> tagWhereClause = query => query
                     .Where(e => e.Fbepisodetags.Any() && SelectedTags.All(tag => e.Fbepisodetags.Select(e => e.Tag.Shortname).Contains(tag)));
+                query = tagWhereClause(query);
+                totalQuery = tagWhereClause(includeClause(totalQuery));
             }
             
             query = query.Include(e => e.Author);
