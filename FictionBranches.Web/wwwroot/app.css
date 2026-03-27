@@ -103,3 +103,13 @@ a.fbtag-selected {
 .text-align-center {
     text-align: center;
 }
+
+img.avatarimg {
+    max-width: 100px;
+    max-height: 100px;
+}
+
+img.avatarsmall {
+    max-width: 40px;
+    max-height: 40px;
+}

@@ -1,0 +1,38 @@
+@page "/fb/staff"
+
+@inject IDbContextFactory<ApplicationDbContext> dbFactory
+
+<h3>Fiction Branches Staff</h3>
+<hr/>
+@foreach (var staff in StaffList)
+{
+    <h3>
+        @if (!string.IsNullOrWhiteSpace(staff.Avatar))
+        {
+            <img class="avatarsmall me-1" alt="" src="@staff.Avatar" /> 
+        }
+        <UserLink User="staff" />
+    </h3>
+    @if (staff.Level >= 100)
+    {
+        <p>Admin</p>
+    }
+    else
+    {
+        <p>Moderator</p>
+    }
+    <p>Member since <DateDisplay Date="staff.Date" Type="DateDisplay.DateDisplayType.Simple" /></p>
+    <div class="fbrawmarkdown">@staff.Bio</div>
+    <hr/>
+}
+
+@code {
+
+    private List<Fbuser> StaffList = [];
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        StaffList = await db.Fbusers.Where(e => e.Level > 1).OrderBy(e => e.Author).ToListAsync();
+    }
+}
