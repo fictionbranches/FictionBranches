@@ -34,5 +34,13 @@
     <SidebarSection>
         <p><a href="/fb/announcements">Announcements</a></p>
         <p><a href="/fb/staff">Staff</a></p>
+        @if (HttpContext.User.IsLoggedIn())
+        {
+            <p><a href="/fb/usersearch"><i class="bi bi-search"></i> Search Authors</a></p>
+        }
     </SidebarSection>
 </SectionContent>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+}

@@ -48,7 +48,7 @@ else
             {
                 <a href="@($"/fb/modify/{GeneratedId}")">Modify as moderator</a><br/>
             }
-            <a href="@($"/fb/search/{GeneratedId}")">🔍Search from here</a><br/>
+            <a href="@($"/fb/search/{GeneratedId}")"><i class="bi bi-search"></i> Search from here</a><br/>
             <a href="@($"{HttpContext.Request.Path}?vote={(hasUpvoted ? "false" : "true")}")" class="btn btn-primary my-1">
                 @if (hasUpvoted)
                 {
