@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using FictionBranches.Web.Data.Interfaces;
 using NpgsqlTypes;
 
@@ -63,4 +64,7 @@ public partial class Fbepisode : IDated
     public virtual ICollection<Fbepisode> InverseParentGenerated { get; set; } = new List<Fbepisode>();
 
     public virtual Fbepisode? ParentGenerated { get; set; }
+
+    [NotMapped]
+    public int Depth => Newmap.Where(c => c == 'A' || c == 'B').Count();
 }

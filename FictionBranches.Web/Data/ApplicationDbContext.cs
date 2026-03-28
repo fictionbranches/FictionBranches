@@ -841,7 +841,13 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.NormalizedEmail).HasComputedColumnSql("UPPER([email])");
             
             
-            
+            entity.HasGeneratedTsVectorColumn(
+                    p => p.SearchVector,
+                    "english",
+                    p => new { p.Id, p.Author })
+                .HasIndex(p => p.SearchVector)
+                .HasMethod("GIN");
+
         });
         modelBuilder.HasSequence("hibernate_sequence");
     }

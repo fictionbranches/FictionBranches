@@ -3,6 +3,7 @@ using System;
 using FictionBranches.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using NpgsqlTypes;
@@ -12,9 +13,11 @@ using NpgsqlTypes;
 namespace FictionBranches.Web.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260308200914_full_text_search_episode_index")]
+    partial class full_text_search_episode_index
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1067,14 +1070,6 @@ namespace FictionBranches.Web.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("phonenumberconfirmed");
 
-                    b.Property<NpgsqlTsVector>("SearchVector")
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("tsvector")
-                        .HasColumnName("searchvector")
-                        .HasAnnotation("Npgsql:TsVectorConfig", "english")
-                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Id", "Author" });
-
                     b.Property<string>("SecurityStamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
@@ -1097,11 +1092,6 @@ namespace FictionBranches.Web.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("fbusers_pkey");
-
-                    b.HasIndex("SearchVector")
-                        .HasDatabaseName("ix_fbusers_searchvector");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
 
                     b.HasIndex("ThemeName")
                         .HasDatabaseName("ix_fbusers_theme_name");

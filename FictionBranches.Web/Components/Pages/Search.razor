@@ -74,7 +74,7 @@ else
                         </td>
                         <td><UserLink User="ep.Author" /></td>
                         <td><DateDisplay Date="ep.Date" Type="DateDisplay.DateDisplayType.Simple" /></td>
-                        <td>@ep.Newmap.Where(c => c == 'A' || c == 'B').Count()</td>
+                        <td>@ep.Depth</td>
                     </tr>
                 }
             </tbody>
@@ -98,7 +98,8 @@ else
     private HashSet<string> SelectedTags = [];
 
     private int PageNum => int.TryParse(Page, out var p) ? int.Max(p, 1) : 1;
-    private int TotalPages = 0;
+    private int TotalPages => (int)Math.Ceiling(((double)TotalCount) / FbConfig.CurrentValue.PageSize);
+    private int TotalCount = 0;
     
     protected override async Task OnInitializedAsync()
     {
@@ -151,7 +152,7 @@ else
                 _ => query
             };
 
-            TotalPages = (int)Math.Ceiling(((double)await totalQuery.CountAsync()) / FbConfig.CurrentValue.PageSize);
+            TotalCount = await totalQuery.CountAsync();
             
             Results = await query
                 .Skip(FbConfig.CurrentValue.PageSize * (PageNum-1))

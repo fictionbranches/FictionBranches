@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using NpgsqlTypes;
 
 namespace FictionBranches.Web.Data.Models;
 
@@ -33,6 +34,8 @@ public partial class Fbuser : IdentityUser
     public int? Bodytextwidth { get; set; }
 
     public bool Hideimages { get; set; }
+    
+    public NpgsqlTsVector SearchVector { get; set; }
 
     public virtual ICollection<Fbannouncement> Fbannouncements { get; set; } = new List<Fbannouncement>();
 

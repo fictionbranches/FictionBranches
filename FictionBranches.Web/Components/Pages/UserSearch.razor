@@ -1,0 +1,77 @@
+@page "/fb/usersearch"
+
+@inject IOptionsMonitor<FictionBranchesOptions> FbConfig
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+
+<PageTitle>Search users</PageTitle>
+<h3>Search users</h3>
+
+<form method="get">
+    <input class="form-control my-3" type="text" name="q" value="@Q" />
+    <button class="btn btn-primary my-3" type="submit"><i class="bi bi-search"></i>Search</button>
+</form>
+
+@if (Results is not null)
+{
+    <PrevNextSelector CurrentPage="PageNum" TotalPages="TotalPages" GetLinkToPage="GetLinkToPage" />
+    
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">Author</th>
+            <th scope="col">Since</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var user in Results)
+        {
+            <tr>
+                <td><UserLink User="user"/></td>
+                <td><DateDisplay Date="user.Date" Type="DateDisplay.DateDisplayType.Simple" /></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+    
+    [SupplyParameterFromQuery] public string? Q { get; set; }
+    [SupplyParameterFromQuery] public string? Page { get; set; }
+
+    private List<Fbuser>? Results;
+
+    private int PageNum => int.TryParse(Page, out var p) ? int.Max(p, 1) : 1;
+    private int TotalPages => (int)Math.Ceiling(((double)TotalCount) / FbConfig.CurrentValue.PageSize);
+    private int TotalCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (!string.IsNullOrWhiteSpace(Q))
+        {
+            await using var db = await DbContextFactory.CreateDbContextAsync();
+
+            var query = db.Fbusers.Where(e => e.SearchVector.Matches(Q));
+            TotalCount = await query.CountAsync();
+
+            Results = await query
+                .OrderBy(e => e.Date)
+                .Skip(FbConfig.CurrentValue.PageSize * (PageNum-1))
+                .Take(FbConfig.CurrentValue.PageSize)
+                .ToListAsync();
+        }
+    }
+    
+    private string GetLinkToPage(int page)
+    {
+        Dictionary<string, object?> query = [];
+        query.Add("q", Q);
+        if (page > 1)
+            query.Add("page", page);
+        return $"{HttpContext.Request.Path}{query.ToQueryString()}";
+    }
+}
