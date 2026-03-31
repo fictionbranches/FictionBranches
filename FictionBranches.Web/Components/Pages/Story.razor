@@ -92,7 +92,7 @@ else
             </p>
         }
 
-        if (episode.InverseParentGenerated.Count() > 1)
+        if (episode.InverseParentGenerated.Count() > 5)
         {
             @if (HttpContext.User.IsLoggedIn())
             {
@@ -101,6 +101,10 @@ else
         }
         
         <hr/>
+    }
+    else if (HttpContext.User.IsLoggedIn())
+    {
+        <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
     }
 
     <a id="comments" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
