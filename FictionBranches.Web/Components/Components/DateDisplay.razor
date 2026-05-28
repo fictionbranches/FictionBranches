@@ -1,7 +1,7 @@
 @if (Date != null)
 {
     <span class="@Class"
-          title="@MouseoverDate"
+          data-bs-toggle="tooltip" data-bs-title="@MouseoverDate"
           data-unixtimemillis="@(new DateTimeOffset(Date.Value.ToUniversalTime()).ToUnixTimeMilliseconds())">
         @FormattedDate
     </span> 

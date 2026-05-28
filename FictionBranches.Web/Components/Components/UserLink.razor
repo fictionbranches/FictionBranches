@@ -1,6 +1,10 @@
 @if (User != null)
 {
-    <a href="@($"/fb/user/{User.Id}")">@User.Author</a>
+    <a href="@($"/fb/user/{User.Id}")"
+       data-bs-toggle="tooltip"
+       data-bs-title="@User.Id">
+        @User.Author
+    </a>
 }
 @code {
     [Parameter, EditorRequired]

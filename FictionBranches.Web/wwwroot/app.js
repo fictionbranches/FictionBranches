@@ -38,7 +38,14 @@ function timestamps() {
     }
 }
 
+function enableTooltips() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    console.log(`Enabled ${tooltipList.length} tooltips`);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     commentEmphasization();
     timestamps();
+    enableTooltips();
 });
