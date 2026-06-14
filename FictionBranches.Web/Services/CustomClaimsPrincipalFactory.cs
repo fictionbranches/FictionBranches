@@ -54,9 +54,8 @@ public static class ClaimsExtensions
 
     private static string SafeClaim(ClaimsPrincipal principal, string  claimName)
     {
-        var claimValue = principal?.FindFirst(claimName)?.Value;
-        ArgumentNullException.ThrowIfNull(claimValue);
-        return claimValue;
+        ArgumentNullException.ThrowIfNull(principal);
+        return principal?.FindFirst(claimName)?.Value ?? "";
     }
 
     public static bool IsAdmin(this ClaimsPrincipal principal) => principal.Level() >= 100;
