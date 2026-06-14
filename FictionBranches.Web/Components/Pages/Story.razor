@@ -3,36 +3,36 @@
 @inject NavigationManager NavMan
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
-@if (episode is null)
+@if (_episode is null)
 {
     <NotFound Item="@GeneratedId.ToString()" />
 }
 else
 {
-    <PageTitle>@episode.Title</PageTitle>
-    <h1>@episode.Title</h1>
+    <PageTitle>@_episode.Title</PageTitle>
+    <h1>@_episode.Title</h1>
     
     <p>
-        <UserLink User="episode.Author" /> on <DateDisplay Date="episode.Date"/>
-        @if (episode.Editor is not null)
+        <UserLink User="_episode.Author" /> on <DateDisplay Date="_episode.Date"/>
+        @if (_episode.Editor is not null)
         {
             <br/>
-            <text>Episode last modified by <UserLink User="episode.Editor"/> on <DateDisplay Date="episode.Editdate"/></text>
+            <text>Episode last modified by <UserLink User="_episode.Editor"/> on <DateDisplay Date="_episode.Editdate"/></text>
         }
     </p>
     
     <p>
-        @episode.Viewcount hits, 
+        @_episode.Viewcount hits, 
         @views views,
         @upvotes upvotes.
     </p>
     
     <p>
-        <TagListDisplay Tags="episode.Fbepisodetags.Select(e => e.Tag)" />
+        <TagListDisplay Tags="_episode.Fbepisodetags.Select(e => e.Tag)" />
     </p>
     
     <p>
-        <a href="@(episode.ParentGeneratedid != null ? $"/fb/story/{episode.ParentGeneratedid}" : "/fb")">Return to Parent Episode</a><br/>
+        <a href="@(_episode.ParentGeneratedid != null ? $"/fb/story/{_episode.ParentGeneratedid}" : "/fb")">Return to Parent Episode</a><br/>
         <a href="@($"{HttpContext.GetPathWithQuery()}#children")">Jump to child episodes</a><br/>
         <a href="@($"{HttpContext.GetPathWithQuery()}#comments")">Jump to comments</a><br/>
     </p>
@@ -40,7 +40,7 @@ else
     @if (HttpContext.User.IsLoggedIn())
     {
         <p>
-            @if (HttpContext.User.Username().Equals(episode.AuthorId))
+            @if (HttpContext.User.Username().Equals(_episode.AuthorId))
             {
                 <a href="@($"/fb/modify/{GeneratedId}")">Modify your episode</a><br/>
             }
@@ -64,12 +64,12 @@ else
     
     <hr/>
     
-    <div class="entry-content fbepisodebody fbrawmarkdown">@episode.Body</div>
+    <div class="entry-content fbepisodebody fbrawmarkdown">@_episode.Body</div>
     
     <hr/>
     
     <a id="children" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
-    @if (episode.InverseParentGenerated.Count > 0)
+    @if (_episode.InverseParentGenerated.Count > 0)
     {
         <form method="GET">
             <select name="sort" id="sort" class="form-select my-3" style="width:auto;" value="@($"/fb/story/{GeneratedId}?sort={sortModel.ChildSort.GetDisplayShortName()}")" onchange="window.location = this.value">
@@ -83,7 +83,7 @@ else
         {
             <a class="btn btn-primary" href="/fb/add/@GeneratedId">Add a new episode</a>
         }
-        @foreach (var child in episode.InverseParentGenerated)
+        @foreach (var child in _episode.InverseParentGenerated)
         {
             <p>
                 <EpisodeLink Episode="child" />
@@ -92,7 +92,7 @@ else
             </p>
         }
 
-        if (episode.InverseParentGenerated.Count() > 5)
+        if (_episode.InverseParentGenerated.Count() > 5)
         {
             @if (HttpContext.User.IsLoggedIn())
             {
@@ -109,14 +109,31 @@ else
 
     <a id="comments" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
     
-    @foreach (var comment in episode.Fbcomments)
+    @foreach (var comment in _episode.Fbcomments)
     {
         <CommentDisplay Comment="comment" ShowAuthor="true" />
     }
     
+    @if (HttpContext.User.IsLoggedIn())
+    {
+        <a id="newcomment" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
+        
+        <EditForm Model="NewComment" method="post" OnValidSubmit="OnValidSubmit" FormName="NewCommentForm" action="@($"{NavMan.Uri.Split('#')[0]}#newcomment")">
+            
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+        
+            <ValidatingInputText @bind-Value="NewComment.Body" id="NewComment.Body" Label="New comment" IsTextArea="true" ClassList="mb-3">
+                <button type="submit" class="btn btn-primary">Add</button>
+            </ValidatingInputText>
+            
+            <InputNumber type="hidden" Value="@GeneratedId" ValueExpression="()=>NewComment.Generatedid" />
+        </EditForm>
+    }
+    
     <SectionContent SectionName="@Names.AdditionalSidebar">
         <SidebarSection Title="Path">
-            @foreach (var ep in pathbox)
+            @foreach (var ep in _pathbox)
             {
                 <p>@(ep.Newmap.Split('B').Length). <EpisodeLink Episode="ep" /></p>
             }
@@ -142,17 +159,21 @@ else
         [Required] public ChildSort ChildSort { get; set; } = ChildSort.OldestFirst;
     }
 
-    [SupplyParameterFromForm] private ChildSortModel sortModel { get; set; } = new();
+    //[SupplyParameterFromForm]
+    private ChildSortModel sortModel { get; set; } = new();
     
-    private Fbepisode? episode;
+    private Fbepisode? _episode;
 
-    private List<Fbepisode?> pathbox;
+    private List<Fbepisode?> _pathbox;
 
     private bool hasUpvoted = false;
 
     private int views, upvotes;
     
     private const string SortCookieName = "fbchildsort";
+
+    [SupplyParameterFromForm]
+    private CommentModel NewComment { get; set; } = new();
     
     protected override void OnInitialized()
     {
@@ -199,7 +220,7 @@ else
             _ => query => query.OrderBy(e => e.Date),
         }; 
         
-        episode = db.Fbepisodes
+        _episode = db.Fbepisodes
             .Include(e => e.Author)
             .Include(e => e.Editor)
             .Include(e => e.Fbcomments.OrderBy(e2 => e2.Date))
@@ -209,23 +230,23 @@ else
             .AsSplitQuery()
             .FirstOrDefault(e => e.Generatedid == GeneratedId);
 
-        if (episode is null)
+        if (_episode is null)
             return; // 404
 
         views = db.Fbepisodeviews.Count(e => e.EpisodeGeneratedid == GeneratedId); 
         upvotes = db.Fbupvotes.Count(e => e.EpisodeGeneratedid == GeneratedId);
         
-        episode.InverseParentGenerated = orderBy(db.Fbepisodes
+        _episode.InverseParentGenerated = orderBy(db.Fbepisodes
             .Where(e => e.ParentGeneratedid == GeneratedId))
             .Include(e => e.Fbepisodetags.OrderBy(e => e.Tag.Shortname))
                 .ThenInclude(e => e.Tag)
             .ToList();
 
-        var path = episode.Newmap.Substring(1).Split('B').Select(long.Parse).ToList();
+        var path = _episode.Newmap.Substring(1).Split('B').Select(long.Parse).ToList();
         if (path.Count > 20)
             path.RemoveRange(0, path.Count - 20);
 
-        pathbox = db.Fbepisodes.Where(e => path.Contains(e.Generatedid)).OrderByDescending(e => e.Generatedid).ToList();
+        _pathbox = db.Fbepisodes.Where(e => path.Contains(e.Generatedid)).OrderByDescending(e => e.Generatedid).ToList();
         
         if (HttpContext.User.IsLoggedIn())
         {
@@ -241,7 +262,51 @@ else
                 ++views;
             }
         }
-        episode.Viewcount += 1;
+        _episode.Viewcount += 1;
         db.SaveChanges();
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (!HttpContext.Request.Method.EqualsIgnoreCase("post"))
+        {
+            NavMan.NavigateTo($"/fb/story/{GeneratedId}#newcomment");
+            return;
+        }
+
+        Console.WriteLine($"************ OnValidSubmit {NewComment.Generatedid} {NewComment.Body}");
+        System.Diagnostics.Debug.WriteLine($"************ OnValidSubmit {NewComment.Generatedid} {NewComment.Body}");
+        
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        var now = DateTimeExtensions.UnspecifiedNow;
+
+        var userId = HttpContext.User.Username();
+        var episode = await db.Fbepisodes.FirstOrDefaultAsync(e => e.Generatedid == NewComment.Generatedid);
+
+        if (episode == null)
+        {
+            NavMan.NavigateTo("/");
+            return;
+        }
+        
+        var comment = new Fbcomment
+        {
+            Date = now,
+            EpisodeGeneratedid = NewComment.Generatedid,
+            UserId = userId,
+            Text = NewComment.Body,
+        };
+
+        db.Fbcomments.Add(comment);
+        await db.SaveChangesAsync();
+        
+        NavMan.NavigateTo($"/fb/story/{GeneratedId}#comment{comment.Id}");
+    }
+    
+    private sealed class CommentModel
+    {
+        [ValidatingStringLength(MinLength = 1, MaxLength = 255)]
+        public string Body { get; set; } = "";
+        public long Generatedid { get; set; } = 0;
     }
 }

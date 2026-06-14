@@ -21,6 +21,10 @@
             @InvalidMessage
         </div>
     }
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
 </div>
 @code {
     [Parameter, EditorRequired] public required string Label { get; init; }
@@ -40,6 +44,9 @@
     // Captures *all other* InputText parameters
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
+    
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 
     private bool ShowValidationMessage => IsValid is not null && !string.IsNullOrWhiteSpace(InvalidMessage);
     

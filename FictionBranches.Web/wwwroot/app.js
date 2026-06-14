@@ -44,8 +44,31 @@ function enableTooltips() {
     console.log(`Enabled ${tooltipList.length} tooltips`);
 }
 
+function smoothScrollOverride() {
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+
+        const isSamePageAnchor =
+            href.startsWith('#') ||
+            (link.hostname === location.hostname &&
+                link.pathname === location.pathname &&
+                href.includes('#'));
+
+        if (isSamePageAnchor) {
+            document.documentElement.style.scrollBehavior = 'smooth';
+        } else {
+            document.documentElement.style.scrollBehavior = 'auto';
+        }
+    });
+    document.querySelector('html').style.scrollBehavior = 'auto';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     commentEmphasization();
     timestamps();
     enableTooltips();
+    smoothScrollOverride();
 });

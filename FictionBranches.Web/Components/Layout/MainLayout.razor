@@ -52,12 +52,12 @@
                     <SidebarSection>
                         @if (!HttpContext.User.IsLoggedIn())
                         {
-                            <p><a class="btn btn-primary" href="/fb/account/login?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-in-right" /> Log in</a></p>
+                            <p><a class="btn btn-primary" href="/fb/account/login?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-in-right"></i> Log in</a></p>
                         }
                         else
                         {
                             <p>Logged in as @HttpContext.User.AuthorName()</p>
-                            <p><a class="btn btn-primary" href="/fb/account/logout?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-right" /> Log out</a></p>
+                            <p><a class="btn btn-primary" href="/fb/account/logout?ReturnURL=@HttpContext.GetPathWithQuery()"><i class="bi bi-box-arrow-right"></i> Log out</a></p>
                             
                             @if (Announcements > 0)
                             {

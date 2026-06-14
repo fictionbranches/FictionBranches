@@ -1,3 +1,6 @@
+@inject NavigationManager NavMan
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+
 <a name="@($"comment{Comment.Id}")" class="mb-3" />
 <div id="@($"comment{Comment.Id}")" class="alert alert-dark">
     @if (Comment.Modvoice)
@@ -18,6 +21,34 @@
         <p><a href="@($"/fb/story/{Comment.EpisodeGenerated!.Generatedid}")">@Comment.EpisodeGenerated.Link</a></p>
     }
     <p><a href="@($"{HttpContext.GetPathWithQuery()}#comment{Comment.Id}")">@Comment.Date</a></p>
+    @if (Comment.UserId!.Equals(HttpContext.User.Username()) || HttpContext.User.IsMod())
+    {
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="@($"#deleteCommentModal{Comment.Id}")">
+            <i class="bi bi-trash3"></i>
+            @if (Comment.UserId!.Equals(HttpContext.User.Username()))
+            {
+                <text>Delete</text>
+            }
+            else
+            {
+                <text>Delete as Moderator</text>
+            }
+        </button>
+        <div class="modal fade" id="@($"deleteCommentModal{Comment.Id}")" tabindex="-1" aria-labelledby="@($"deleteCommentModalLabel{Comment.Id}")" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="@($"deleteCommentModalLabel{Comment.Id}")">Are you sure you want to delete this comment?</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <a class="btn btn-outline-danger" href="@($"/fb/deletecomment?commentId={Comment.Id}&redirectTo=/fb/story/{Comment.EpisodeGeneratedid}#comments")">Confirm delete</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
