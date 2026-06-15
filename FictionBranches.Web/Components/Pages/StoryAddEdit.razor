@@ -9,24 +9,29 @@
 
 @if (notFound)
 {
+    <PageTitle>Not Found: @((ParentGeneratedId ?? GeneratedId).ToString())</PageTitle>
     <NotFound Item="@((ParentGeneratedId ?? GeneratedId).ToString())"/>
 }
 else if (notAllowed)
 {
+    <PageTitle>Not Authorized</PageTitle>
     <p>You are not allowed to do that.</p>
 }
 else
 {
     @if (ParentGeneratedId != null)
     {
+        <PageTitle>Add to '@Episode!.ParentGenerated!.Link'</PageTitle>
         <h3>Add to '@Episode!.ParentGenerated!.Link'</h3>
     }
     else if (GeneratedId != null)
     {
+        <PageTitle>Modifying '@Episode!.Link'</PageTitle>
         <h3>Modifying '@Episode!.Link'</h3>
     }
     else
     {
+        <PageTitle>Add new root episode</PageTitle>
         <h3>Add new root episode</h3>
     }
     
