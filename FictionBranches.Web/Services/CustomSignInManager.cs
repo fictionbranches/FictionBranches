@@ -21,7 +21,7 @@ public class CustomSignInManager<TUser> : SignInManager<TUser>  where TUser : Id
         _userManager = userManager;
     }
 
-    public async Task<SignInResult> CustomPasswordSignInAsync(string usernameOrEmail, string password, bool isPersistent, bool lockoutOnFailure)
+    public async Task<SignInResult> CustomPasswordSignInAsync(string usernameOrEmail, string password, bool lockoutOnFailure)
     {
         TUser? user = null;
 
@@ -42,6 +42,6 @@ public class CustomSignInManager<TUser> : SignInManager<TUser>  where TUser : Id
             return SignInResult.Failed;
         }
 
-        return await PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure);
+        return await PasswordSignInAsync(user, password, true, lockoutOnFailure);
     }
 }

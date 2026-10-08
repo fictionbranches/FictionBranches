@@ -21,34 +21,35 @@
                 <hr />
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" autofocus class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <InputText @bind-Value="Input.Email" id="Input.Email" autofocus class="form-control" autocomplete="username" aria-required="true" />
                     <label for="Input.Email" class="form-label">Email or Username</label>
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" />
                     <label for="Input.Password" class="form-label">Password</label>
                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary"><i class="bi bi-box-arrow-in-right" /> Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a href="/fb/account/forgotpassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    @* <p> *@
-                    @*     <a href="Account/ResendEmailConfirmation">Resend email confirmation</a> *@
-                    @* </p> *@
+                @* <div class="checkbox mb-3"> *@
+                @*     <label class="form-label"> *@
+                @*         <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" /> *@
+                @*         Remember me *@
+                @*     </label> *@
+                @* </div> *@
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col">
+                            <button type="submit" class="w-100 btn btn-lg btn-primary"><i class="bi bi-box-arrow-in-right"/> Log in</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <a class="w-100 mt-3 btn btn-sm btn-secondary" href="/fb/account/forgotpassword">Forgot your password?</a>
+                        </div>
+                        <div class="col-6">
+                            <a class="w-100 mt-3 btn btn-sm btn-secondary" href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
+                        </div>
+                    </div>
                 </div>
             </EditForm>
         </section>
@@ -80,7 +81,7 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.CustomPasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.CustomPasswordSignInAsync(Input.Email, Input.Password, /*Input.RememberMe,*/ lockoutOnFailure: false);
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -90,7 +91,7 @@
         {
             RedirectManager.RedirectTo(
                 "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+                new() { ["returnUrl"] = ReturnUrl/*, ["rememberMe"] = Input.RememberMe*/ });
         }
         else if (result.IsLockedOut)
         {
@@ -113,7 +114,7 @@
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
+        // [Display(Name = "Remember me?")]
+        // public bool RememberMe { get; set; }
     }
 }
