@@ -1,4 +1,6 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+﻿@using FictionBranches.Web.Components.Pages
+
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(NotFoundCatchAll)">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />

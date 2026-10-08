@@ -1,0 +1,8 @@
+@inject NavigationManager NavMan
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        NavMan.NotFound();
+    }
+}

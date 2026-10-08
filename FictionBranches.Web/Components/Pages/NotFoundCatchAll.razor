@@ -1,6 +1,18 @@
 ﻿@page "/{*path}"
+@page "/fb/notfound"
+
+@inject NavigationManager NavMan
+
 <PageTitle>Not Found</PageTitle>
-<NotFound Item="@(Path == null ? null : Path.StartsWith("/fb/") ? Path[4..] : Path.StartsWith("fb/") ? Path[3..] : Path)" />
+
+@if (!string.IsNullOrEmpty(Path))
+{
+    <h3>Not Found: @Path</h3>
+}
+else
+{
+    <h3>Not Found: @(new Uri(NavMan.Uri).PathAndQuery)</h3>
+}
 @code {
     [Parameter] public string? Path { get; init; }
 }

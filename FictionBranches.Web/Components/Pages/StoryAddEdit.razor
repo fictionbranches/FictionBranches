@@ -10,7 +10,7 @@
 @if (notFound)
 {
     <PageTitle>Not Found: @((ParentGeneratedId ?? GeneratedId).ToString())</PageTitle>
-    <NotFound Item="@((ParentGeneratedId ?? GeneratedId).ToString())"/>
+    <NotFound404 />
 }
 else if (notAllowed)
 {
