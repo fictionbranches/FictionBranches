@@ -3,6 +3,8 @@
 @inject IOptionsMonitor<FictionBranchesOptions> FbConfig
 @inject IDbContextFactory<ApplicationDbContext> DbContextFactory
 
+@attribute [Authorize]
+
 <PageTitle>Search users</PageTitle>
 <h3>Search users</h3>
 
