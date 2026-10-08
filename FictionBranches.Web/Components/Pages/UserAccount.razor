@@ -1,0 +1,280 @@
+@page "/fb/useraccount"
+
+@inject IDbContextFactory<ApplicationDbContext> DbContextFactory
+@inject NavigationManager NavMan
+@inject SignInManager<Fbuser> SignInManager
+
+@attribute [Authorize]
+
+<PageTitle>User Account Settings</PageTitle>
+
+<h1>Modify your account</h1>
+
+<p><a href="/fb/user/@HttpContext.User.Username()">View your account</a></p>
+
+<hr/>
+
+<EditForm Model="NotificationSettings" method="post" OnValidSubmit="OnValidSubmitNotificationSettings" FormName="UserAccountNotificationSettingsForm">
+    
+    <h3>Notification settings</h3>
+    
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="container-fluid">
+        <div class="row">
+            <div class="@LeftColumnClass">Get notified when:</div>
+            <div class="@ColumnClass">on-site</div>
+            <div class="@ColumnClass">email</div>
+        </div>
+        <div class="row">
+            <div class="@LeftColumnClass">Someone comments on an episode you wrote</div>
+            <div class="@ColumnClass">
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="NotificationSettings.CommentSite" />
+                </div>
+            </div>
+            <div class="@ColumnClass">
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="NotificationSettings.CommentMail" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="@LeftColumnClass">Someone writes a new child episode of an episode you wrote</div>
+            <div class="@ColumnClass">
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="NotificationSettings.ChildSite" />
+                </div>
+            </div>
+            <div class="@ColumnClass">
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="NotificationSettings.ChildMail" />
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button type="submit" class="btn btn-primary my-3">Update notification settings</button>
+</EditForm>
+
+<EditForm Model="AuthorName" method="post" OnValidSubmit="OnValidSubmitAuthorName" FormName="AuthorNameForm">
+    
+    <h3>Change author name</h3>
+    
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <InputText class="form-control" placeholder="Name" @bind-Value="AuthorName.Author" />
+    <button type="submit" class="btn btn-primary my-3">Update name</button>
+</EditForm>
+
+<EditForm Model="AuthorBio" method="post" OnValidSubmit="OnValidSubmitAuthorBio" FormName="AuthorBioForm">
+    
+    <h3>Change author bio</h3>
+    
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div id="buttonToggleGroup" class="mb-3">
+        <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#formattingHelp" role="button"
+                aria-expanded="false" aria-controls="formattingHelp">
+            Formatting help
+        </button>
+        <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previewMarkdown" role="button"
+                aria-expanded="false" aria-controls="previewMarkdown">
+            Preview markdown
+        </button>
+        <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="formattingHelp">
+            <div class="card card-body">
+                <MarkdownFormattingHelp/>
+            </div>
+        </div>
+        <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previewMarkdown">
+            <div class="card card-body" id="previewDiv"></div>
+        </div>
+    </div>
+    
+    <InputTextArea class="form-control previewtext" @bind-Value="AuthorBio.Bio" />
+    <button type="submit" class="btn btn-primary my-3">Update bio</button>
+</EditForm>
+
+@*
+TODO:
+- email address
+- password
+- theme
+- avatar URL
+- body text width
+- subscribed users
+- blocked users
+*@
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const bodyTextArea = document.querySelector('.previewtext');
+        const previewDiv = document.getElementById('previewDiv');
+        if (bodyTextArea && previewDiv) {
+            const onBodyChange = () => {
+                const body = bodyTextArea.value ?? "";
+                previewDiv.innerHTML = '';
+                const div = document.createElement('div');
+                div.innerHTML = markdownToHTML(body);
+                previewDiv.appendChild(div);
+            };
+
+            bodyTextArea.addEventListener('input', () => onBodyChange());
+            onBodyChange();
+        }
+    });
+</script>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private const string LeftColumnClass = "col-6 border";
+    private const string ColumnClass = "col-3 col-md-2 border d-flex justify-content-center align-items-center";
+
+    #pragma warning disable BL0008
+    [SupplyParameterFromForm(FormName = "UserAccountNotificationSettingsForm")]
+    private NotificationSettingsModel NotificationSettings { get; set; } = new();
+    [SupplyParameterFromForm(FormName = "AuthorNameForm")]
+    private AuthorNameModel AuthorName { get; set; } = new();
+    [SupplyParameterFromForm(FormName = "AuthorBioForm")]
+    private AuthorBioModel AuthorBio { get; set; } = new();
+    #pragma warning restore BL0008
+        
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        bool isPost;
+        switch (HttpContext.Request.Method.ToLower())
+        {
+            case "post":
+                isPost = true;
+                break;
+            case "get":
+                isPost = false;
+                break;
+            default:
+                ReloadThisPage();
+                return;
+        }
+
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        var user = await db.Fbusers.FindAsync(HttpContext.User.Username());
+        if (user == null)
+        {
+            NavMan.NotFound();
+            return;
+        }
+
+        if (!isPost)
+        {
+            NotificationSettings.CommentSite = user.Commentsite;
+            NotificationSettings.CommentMail = user.Commentmail;
+            NotificationSettings.ChildSite = user.Childsite;
+            NotificationSettings.ChildMail = user.Childmail;
+
+            AuthorName.Author = user.Author ?? "";
+
+            AuthorBio.Bio = user.Bio ?? "";
+        }
+    }
+
+    private async Task OnValidSubmitNotificationSettings()
+    {
+        if (!HttpContext.Request.Method.EqualsIgnoreCase("post"))
+        {
+            ReloadThisPage();
+            return;
+        }
+        
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        var user = await db.Fbusers.FindAsync(HttpContext.User.Username());
+        if (user == null)
+        {
+            ReloadThisPage();
+            return;
+        }
+        
+        user.Commentsite = NotificationSettings.CommentSite;
+        user.Commentmail = NotificationSettings.CommentMail;
+        user.Childsite = NotificationSettings.ChildSite;
+        user.Childmail = NotificationSettings.ChildMail;
+        
+        await db.SaveChangesAsync();
+
+        ReloadThisPage();
+    }
+    
+    private async Task OnValidSubmitAuthorName()
+    {
+        if (!HttpContext.Request.Method.EqualsIgnoreCase("post"))
+        {
+            ReloadThisPage();
+            return;
+        }
+
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        var user = await db.Fbusers.FindAsync(HttpContext.User.Username());
+        if (user == null)
+        {
+            ReloadThisPage();
+            return;
+        }
+
+        user.Author = AuthorName.Author;
+        await db.SaveChangesAsync();
+        
+        // refresh claims
+        await SignInManager.RefreshSignInAsync(user);
+
+        ReloadThisPage();
+    }
+    
+    private async Task OnValidSubmitAuthorBio()
+    {
+        if (!HttpContext.Request.Method.EqualsIgnoreCase("post"))
+        {
+            ReloadThisPage();
+            return;
+        }
+
+        await using var db = await DbContextFactory.CreateDbContextAsync();
+        var user = await db.Fbusers.FindAsync(HttpContext.User.Username());
+        if (user == null)
+        {
+            ReloadThisPage();
+            return;
+        }
+
+        user.Bio = AuthorBio.Bio;
+        await db.SaveChangesAsync();
+
+        ReloadThisPage();
+    }
+    
+    private void ReloadThisPage() => NavMan.NavigateTo($"/fb/useraccount");
+    
+    private sealed class NotificationSettingsModel
+    {
+        public bool CommentSite { get; set; }
+        public bool CommentMail { get; set; }
+        public bool ChildSite { get; set; }
+        public bool ChildMail { get; set; }
+    }
+    
+    private sealed class AuthorNameModel
+    {
+        [ValidatingStringLength(MinLength = 1, MaxLength = 32)]
+        public string Author { get; set; } = "";
+    }
+    
+    private sealed class AuthorBioModel
+    {
+        [ValidatingStringLength(MinLength = 0, MaxLength = 10000)]
+        public string Bio { get; set; } = "";
+    }
+}
