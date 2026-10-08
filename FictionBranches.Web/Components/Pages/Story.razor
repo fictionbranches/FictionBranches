@@ -118,7 +118,7 @@ else
     {
         <a id="newcomment" style="position: absolute; left: -9999px; width: 1px; height: 1px;"></a>
         
-        <EditForm Model="NewComment" method="post" OnValidSubmit="OnValidSubmit" FormName="NewCommentForm" action="@($"{NavMan.Uri.Split('#')[0]}#newcomment")">
+        <EditForm Model="NewComment" method="post" OnValidSubmit="OnValidSubmit" FormName="NewCommentForm" action="@($"{new Uri(NavMan.Uri.Split('#')[0]).PathAndQuery}#newcomment")">
             
             <DataAnnotationsValidator />
             <ValidationSummary />
