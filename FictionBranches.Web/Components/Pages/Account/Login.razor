@@ -70,6 +70,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (HttpContext.User.IsLoggedIn())
+        {
+            RedirectManager.RedirectTo("/fb");
+            return;
+        }
+        
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             // Clear the existing external cookie to ensure a clean login process

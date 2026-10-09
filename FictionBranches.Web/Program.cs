@@ -45,6 +45,9 @@ builder.Services.Configure<FictionBranchesOptions>(builder.Configuration.GetSect
 builder.Services.AddSingleton<RootEpisodeCache>();
 builder.Services.AddScoped<RootEpisodeCacheUpdater>();
 
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<IEmailSender<Fbuser>, IdentityEmailSender>();
+
 builder.Services.AddQueue();
 builder.Services.AddScheduler();
 

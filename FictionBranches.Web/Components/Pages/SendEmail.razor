@@ -1,0 +1,65 @@
+@page "/fb/admin/sendemail"
+
+@inject EmailService EmailService
+
+@attribute [Authorize]
+
+@if (!HttpContext.User.IsAdmin())
+{
+    <PageTitle>Not Authorized</PageTitle>
+    <p>You are not allowed to do that.</p>
+}
+else if (_isSubmit)
+{
+    <p>Email was sent.</p>
+}
+else
+{
+    <h3>Send email</h3>
+    <EditForm Model="Input" OnValidSubmit="OnValidSubmit" FormName="SendEmailForm">
+        <div class="form-floating mb-3">
+            <InputText @bind-Value="Input.To" id="Input.To" class="form-control" aria-required="true" />
+            <label for="Input.To" class="form-label">To</label>
+        </div>
+        <div class="form-floating mb-3">
+            <InputText @bind-Value="Input.Subject" id="Input.Subject" class="form-control" aria-required="true" />
+            <label for="Input.Subject" class="form-label">Subject</label>
+        </div>
+        <div class="form-floating mb-3">
+            <InputTextArea @bind-Value="Input.Body" id="Input.Body" class="form-control" aria-required="true" />
+            <label for="Input.Body" class="form-label">Body</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Send</button>
+    </EditForm>
+}
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    #pragma warning disable BL0008
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+    #pragma warning enable BL0008
+
+    private bool _isSubmit = false;
+    
+    private async Task OnValidSubmit()
+    {
+        _isSubmit = true;
+        await EmailService.SendEmailAsync([Input.To], Input.Subject, Input.Body);
+    }
+    
+    private sealed class InputModel
+    {
+        [ValidatingStringLength(MinLength = 3, MaxLength = 1000)]
+        [EmailAddress]
+        public string To { get; set; }
+        
+        [ValidatingStringLength(MinLength = 1, MaxLength = 1000)]
+        public string Subject { get; set; }
+        
+        [ValidatingStringLength(MinLength = 1, MaxLength = 10000)]
+        public string Body { get; set; }
+    }
+}
