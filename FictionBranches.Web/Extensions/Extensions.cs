@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.AspNetCore.Identity;
 
 namespace FictionBranches.Web.Extensions;
 
@@ -84,4 +85,12 @@ public static class HttpContextExtensions
 public static class DateTimeExtensions
 {
     public static DateTime UnspecifiedNow => new DateTime(DateTime.UtcNow.Ticks, DateTimeKind.Unspecified);
+}
+
+public static class UserManagerExtensions
+{
+    public static Task<TUser?> FindByEmailOrIdAsync<TUser>(this UserManager<TUser> userManager, string emailOrId) where TUser : class
+    {
+        return emailOrId.Contains('@') ? userManager.FindByEmailAsync(emailOrId) : userManager.FindByIdAsync(emailOrId);
+    }
 }
