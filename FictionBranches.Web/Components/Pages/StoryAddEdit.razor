@@ -7,12 +7,12 @@
 
 @attribute [Authorize]
 
-@if (notFound)
+@if (_notFound)
 {
     <PageTitle>Not Found: @((ParentGeneratedId ?? GeneratedId).ToString())</PageTitle>
     <NotFound404 />
 }
-else if (notAllowed)
+else if (_notAllowed)
 {
     <PageTitle>Not Authorized</PageTitle>
     <p>You are not allowed to do that.</p>
@@ -21,13 +21,13 @@ else
 {
     @if (ParentGeneratedId != null)
     {
-        <PageTitle>Add to '@Episode!.ParentGenerated!.Link'</PageTitle>
-        <h3>Add to '@Episode!.ParentGenerated!.Link'</h3>
+        <PageTitle>Add to '@_episode!.ParentGenerated!.Link'</PageTitle>
+        <h3>Add to '@_episode!.ParentGenerated!.Link'</h3>
     }
     else if (GeneratedId != null)
     {
-        <PageTitle>Modifying '@Episode!.Link'</PageTitle>
-        <h3>Modifying '@Episode!.Link'</h3>
+        <PageTitle>Modifying '@_episode!.Link'</PageTitle>
+        <h3>Modifying '@_episode!.Link'</h3>
     }
     else
     {
@@ -40,7 +40,7 @@ else
         <DataAnnotationsValidator />
         <ValidationSummary />
         
-        <ValidatingInputText @bind-Value="Input.Title" id="Input.Title" Label="Title"
+        <ValidatingInputText @bind-Value="Input.Title" Label="Title"
                              type="text" placeholder="And So It Begins..." ClassList="mb-3"/>
         
         <div id="buttonToggleGroup" class="mb-3">
@@ -48,7 +48,7 @@ else
                     aria-expanded="false" aria-controls="formattingHelp">
                 Formatting help
             </button>
-            @if (Episode?.ParentGenerated != null)
+            @if (_episode?.ParentGenerated != null)
             {
                 <button type="button" class="btn btn-secondary me-3" data-bs-toggle="collapse" data-bs-target="#previousEpisodeBody"
                         role="button"
@@ -65,13 +65,13 @@ else
                     <MarkdownFormattingHelp/>
                 </div>
             </div>
-            @if (Episode?.ParentGenerated != null)
+            @if (_episode?.ParentGenerated != null)
             {
                 <div class="my-3 collapse" data-bs-parent="#buttonToggleGroup" id="previousEpisodeBody">
                     <div class="card card-body">
-                        <EpisodeLink Episode="Episode.ParentGenerated"/>
-                        <h5>@Episode.ParentGenerated.Title</h5>
-                        <div class="fbepisodebody fbrawmarkdown">@Episode.ParentGenerated.Body</div>
+                        <EpisodeLink Episode="_episode.ParentGenerated"/>
+                        <h5>@_episode.ParentGenerated.Title</h5>
+                        <div class="fbepisodebody fbrawmarkdown">@_episode.ParentGenerated.Body</div>
                     </div>
                 </div>
             }
@@ -90,7 +90,22 @@ else
         <InputNumber type="hidden" Value="@Input.Generatedid" ValueExpression="()=>Input.Generatedid" />
         <InputNumber type="hidden" Value="@Input.ParentGeneratedid" ValueExpression="()=>Input.ParentGeneratedid" />
         
-        <button type="submit" class="btn btn-primary">@submitButtonText</button>
+        <h5>Tags</h5>
+        
+        @for (var i = 0; i < Input.Tags.Count; ++i)
+        {
+            var ii = i;
+            <div class="checkbox mb-0">
+                <label class="form-label" title="@Input.Tags[ii].Description">
+                    <InputNumber type="hidden" Value="@Input.Tags[ii].Id" ValueExpression="()=>Input.Tags[ii].Id" />
+                    <InputCheckbox @bind-Value="Input.Tags[ii].Checked" class="form-check-input"/>
+                    @Input.Tags[ii].ShortName - @Input.Tags[ii].LongName
+                </label>
+            </div>
+        
+        }
+        
+        <button type="submit" class="btn btn-primary">@SubmitButtonText</button>
     </EditForm>
 }
 
@@ -123,15 +138,17 @@ else
     [Parameter] public long? GeneratedId { get; init; }
     [Parameter] public long? ParentGeneratedId { get; init; }
     
+    #pragma warning disable BL0008
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
+    #pragma warning enable BL0008
 
-    private Fbepisode? Episode;
+    private Fbepisode? _episode;
     
-    private bool notFound = false;
-    private bool notAllowed = false;
+    private bool _notFound;
+    private bool _notAllowed;
     
-    private string submitButtonText => ParentGeneratedId != null ? "Add new episode" : GeneratedId != null ? "Modify episode" : "Add new root episode";
+    private string SubmitButtonText => ParentGeneratedId != null ? "Add new episode" : GeneratedId != null ? "Modify episode" : "Add new root episode";
         
     protected override void OnInitialized()
     {
@@ -158,53 +175,58 @@ else
             var parentEpisode = db.Fbepisodes.Find(ParentGeneratedId);
             if (parentEpisode == null)
             {
-                notFound = true;
+                _notFound = true;
                 return;
             }
 
-            Episode = newEpisode(parentEpisode);
+            _episode = NewEpisode(parentEpisode);
             
         }
         else if (GeneratedId != null) // modifying an existing episode
         {
-            Episode = db.Fbepisodes
+            _episode = db.Fbepisodes
                 .Where(e => e.Generatedid == GeneratedId)
                 .Include(e => e.ParentGenerated)
+                .Include(e => e.Fbepisodetags)
                 .FirstOrDefault();
-            if (Episode == null)
+            if (_episode == null)
             {
-                notFound = true;
+                _notFound = true;
                 return;
             }
 
-            if (HttpContext.User.Username() != Episode.AuthorId &&
+            if (HttpContext.User.Username() != _episode.AuthorId &&
                 !HttpContext.User.IsMod())
             {
-                notAllowed = true;
+                _notAllowed = true;
             }
         }
         else // adding a new root
         {
             if (!HttpContext.User.IsAdmin())
             {
-                notAllowed = true;
+                _notAllowed = true;
                 return;
             }
 
-            Episode = newEpisode();
+            _episode = NewEpisode();
         }
 
-        if (!isPost)
-        {
-            Input.Title = Episode?.Title ?? "";
-            Input.Link = Episode?.Link ?? "";
-            Input.Body = Episode?.Body ?? "";
-            Input.Generatedid = Episode?.Generatedid ?? 0;
-            Input.ParentGeneratedid = Episode?.ParentGeneratedid ?? 0;
-        }
+        if (isPost)
+            return;
+        
+        Input.Title = _episode.Title ?? "";
+        Input.Link = _episode.Link ?? "";
+        Input.Body = _episode.Body ?? "";
+        Input.Generatedid = _episode.Generatedid;
+        Input.ParentGeneratedid = _episode.ParentGeneratedid ?? 0;
+
+        var tags = _episode.Fbepisodetags.Select(et => et.TagId! ?? 0).ToHashSet();
+        var allTags = db.Fbtags.OrderBy(e => e.Shortname).ToList();
+        Input.Tags = [.. allTags.Select(e => InputTag.Create(e, tags.Contains(e.Id)))];
     }
 
-    private Fbepisode newEpisode(Fbepisode? parent = null) => new()
+    private Fbepisode NewEpisode(Fbepisode? parent = null) => new()
     {
         Title = "",
         Link = "",
@@ -247,7 +269,10 @@ else
         using var db = DbContextFactory.CreateDbContext();
         var now = DateTimeExtensions.UnspecifiedNow;
         
-        var episode = db.Fbepisodes.Find(Input.Generatedid);
+        var episode = db.Fbepisodes
+            .Where(e => e.Generatedid == Input.Generatedid)
+            .Include(e => e.Fbepisodetags)
+            .FirstOrDefault();
         if (episode == null)
         {
             RedirectOnError();
@@ -260,7 +285,10 @@ else
             return;
         }
 
-        if (Input.Title.Equals(episode.Title) && Input.Link.Equals(episode.Link) && Input.Body.Equals(episode.Body))
+        if (Input.Title.Equals(episode.Title) && 
+            Input.Link.Equals(episode.Link) && 
+            Input.Body.Equals(episode.Body) &&
+            Input.Tags.Where(e => e.Checked).Select(e => e.Id).ToHashSet().Equals(episode.Fbepisodetags!.Select(e => e.TagId ?? 0).ToHashSet()))
         {
             RedirectOnError();
             return;
@@ -271,6 +299,22 @@ else
         episode.Link = Input.Link;
         episode.EditorId = HttpContext.User.Username();
         episode.Editdate = now;
+        
+        foreach (var tagToRemove in episode.Fbepisodetags!.Where(e => Input.Tags.Any(e2 => e2.Id == e.TagId && !e2.Checked)).ToList())
+        {
+            episode.Fbepisodetags!.Remove(tagToRemove);
+        }
+        
+        foreach (var tagToAdd in Input.Tags.Where(e => e.Checked && episode.Fbepisodetags!.All(e2 => e2.TagId != e.Id)).ToList())
+        {
+            episode.Fbepisodetags!.Add(new Fbepisodetag
+            {
+                Taggeddate = now.Ticks,
+                EpisodeGeneratedid = episode.Generatedid,
+                TagId = tagToAdd.Id,
+                TaggedbyId = HttpContext.User.Username()
+            });
+        }
 
         db.SaveChanges();
         NavMan.NavigateTo($"/fb/story/{episode.Generatedid}");
@@ -302,7 +346,13 @@ else
                 Date = now,
                 Childcount = 1,
                 Editdate = now,
-                EditorId = userId
+                EditorId = userId,
+                Fbepisodetags = [.. Input.Tags.Where(e => e.Checked).Select(e => new Fbepisodetag
+                {
+                    Taggeddate = now.Ticks,
+                    TagId = e.Id,
+                    TaggedbyId = HttpContext.User.Username()
+                })]
             };
             db.Fbepisodes.Add(episode);
             db.SaveChanges();
@@ -381,7 +431,31 @@ else
         [ValidatingStringLength(MinLength = 1, MaxLength = 255)]
         public string Link { get; set; } = "";
         
-        public long Generatedid { get; set; } = 0;
-        public long ParentGeneratedid { get; set; } = 0;
+        public long Generatedid { get; set; }
+        public long ParentGeneratedid { get; set; }
+        
+        public List<InputTag> Tags { get; set; } = [];
+    }
+    
+    private sealed class InputTag
+    {
+        public long Id { get; set; }
+        public string ShortName { get; set; } = "";
+        public string LongName { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool Checked { get; set; }
+    
+        public static InputTag Create(Fbtag tag, bool cheked)
+        {
+            return new InputTag
+            {
+                Id = tag.Id,
+                ShortName = tag.Shortname,
+                LongName = tag.Longname ?? "",
+                Description = tag.Description ?? "",
+                Checked = cheked
+            };
+        }
+        
     }
 }
